@@ -1,4 +1,11 @@
-# v00-scaffold has NO dependencies — the mock provider is pure standard
-# library, so `python -m askrepo ask "hello"` works before any pip install.
+# The mock provider needs NOTHING — `python -m askrepo ask "hello"` works
+# before any pip install. These are for the real providers (v01-chat).
 #
-# The provider SDKs (openai, anthropic) arrive at v01-chat.
+# You only strictly need the one matching your PROVIDER (see .env). Both are
+# light, and installing both lets you switch stacks with one env-var change.
+
+# OpenAI — used when PROVIDER=openai (chat, streamed).
+openai>=1.30.0
+
+# Anthropic — used when PROVIDER=claude (messages, streamed).
+anthropic>=0.111.0

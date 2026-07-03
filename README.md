@@ -12,16 +12,20 @@ The roadmap — every step, what it builds, and its definition of done — lives
 
 ## Quickstart
 
-Everything at the current tag runs **offline and free** — no key, no install:
+The offline path always works — no key, no install:
 
 ```bash
 python check_setup.py              # verifies your environment; makes no API call
 python -m askrepo ask "hello"      # canned answer from the mock provider
 ```
 
-To configure (optional at v00): `cp .env.example .env` and set `PROVIDER`.
-Your API key never goes in `.env` — keychain + `secrun`, per
-[../SECRETS.md](../SECRETS.md).
+For a real model, `pip install -r requirements.txt`, then `cp .env.example
+.env` and set `PROVIDER=openai` or `PROVIDER=claude`. Your API key never goes
+in `.env` — keychain + `secrun`, per [../SECRETS.md](../SECRETS.md):
+
+```bash
+secrun python -m askrepo ask "hello"   # same question, real model, real cost line
+```
 
 ## The step log
 
@@ -32,25 +36,33 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | Tag | Dive exercised | Status | What it added |
 |-----|----------------|--------|---------------|
 | `v00-scaffold` | — (house style) | **done** | CLI skeleton, mock provider, `check_setup.py`; runs offline |
-| `v01-chat` | OpenAI + Claude API | next | real streamed answers from either provider |
-| `v02-prompt` | Prompt Engineering | — | citation contract, declines off-topic asks |
+| `v01-chat` | OpenAI + Claude API | **done** | real streamed answers from either provider, priced from real token usage |
+| `v02-prompt` | Prompt Engineering | next | citation contract, declines off-topic asks |
 | `v03-rag` | RAG | — | index the series, ask, get cited answers |
 | `v04-evals` | Evals | — | golden set, runner, frozen baseline + corpus manifest |
 | `v05-agent` | Agents | — | tool-loop retrieval; measured RAG-vs-agent verdict |
 | `v06-hardened` | Prompt Injection | — | red-team suite; attack success before/after defenses |
 | `v07-production` | Production | — | caching, cost budget, retries, structured logs |
 
-## What v00 proves
+## What exists so far
 
-Nothing intelligent — deliberately. `ask` sends your question through the full
-path (CLI → provider → streamed answer) and the mock provider answers with a
-canned response that *says it's canned*, so plumbing can't be mistaken for
-intelligence. The interfaces the whole project grows on are already in place:
+**v00** proved the plumbing: `ask` sends your question through the full path
+(CLI → provider → streamed answer) and the mock provider answers with a canned
+response that *says it's canned*, so plumbing can't be mistaken for
+intelligence. The interfaces the whole project grows on were in place from the
+start:
 
 - [`askrepo/providers.py`](askrepo/providers.py) — `complete(messages) -> stream`,
-  the one contract every provider (mock now; OpenAI/Claude at v01) honors.
+  the one contract every provider honors.
 - [`askrepo/cli.py`](askrepo/cli.py) — subcommand skeleton that `index`, `chat`,
   `eval`, and `redteam` hang off later.
 - [`askrepo/config.py`](askrepo/config.py) — defaults ← `.env` ← environment,
-  which is what lets `secrun` inject keys per-command from v01 on.
-- Cost printed on every answer, starting now, while the honest number is $0.
+  which is what lets `secrun` inject keys per-command.
+
+**v01** put real models in the mock's seat: OpenAI and Claude, both streamed,
+behind the unchanged `complete()` interface — switching stacks is one env-var
+change (`PROVIDER=openai|claude`, model overridable via `MODEL`). The cost
+line is now real: each provider reports its actual token usage after the
+stream ends, and the CLI prices it with the same numbers as
+[../MODELS.md](../MODELS.md). The mock keeps working with nothing installed —
+the SDKs import lazily, so the v00 promise holds at every tag.
