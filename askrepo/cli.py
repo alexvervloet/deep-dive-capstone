@@ -12,6 +12,7 @@ eval, redteam) — see ../CAPSTONE.md for the roadmap.
 """
 
 import argparse
+import os
 import sys
 
 from askrepo.config import load_config
@@ -115,6 +116,13 @@ def cmd_index(args):
     return 0
 
 
+def cmd_redteam(args):
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "evals"))
+    import redteam
+
+    return redteam.run(args.freeze)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="askrepo",
@@ -155,6 +163,14 @@ def main(argv=None):
     )
     index.add_argument("path", help="root of the corpus to index (e.g. ..)")
     index.set_defaults(func=cmd_index)
+
+    redteam = subparsers.add_parser(
+        "redteam", help="attack askrepo with the poisoned fixtures corpus (v06)"
+    )
+    redteam.add_argument(
+        "--freeze", action="store_true", help="write evals/redteam.result.json"
+    )
+    redteam.set_defaults(func=cmd_redteam)
 
     args = parser.parse_args(argv)
     return args.func(args)
