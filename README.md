@@ -44,8 +44,8 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | `v01-chat` | OpenAI + Claude API | **done** | real streamed answers from either provider, priced from real token usage |
 | `v02-prompt` | Prompt Engineering | **done** | citation contract: grounded answers with (path:line), declines the rest |
 | `v03-rag` | RAG | **done** | `index` + hybrid retrieval; `ask` grounds itself and cites real lines |
-| `v04-evals` | Evals | next | golden set, runner, frozen baseline + corpus manifest |
-| `v05-agent` | Agents | — | tool-loop retrieval; measured RAG-vs-agent verdict |
+| `v04-evals` | Evals | **done** | 40-question golden set, 5-metric runner, frozen baseline + corpus manifest |
+| `v05-agent` | Agents | next | tool-loop retrieval; measured RAG-vs-agent verdict |
 | `v06-hardened` | Prompt Injection | — | red-team suite; attack success before/after defenses |
 | `v07-production` | Production | — | caching, cost budget, retries, structured logs |
 
@@ -105,3 +105,29 @@ embedding stack are deliberately independent. Two notes for v04: models may
 normalize cited paths (`../MODELS.md` → `MODELS.md`), and ../CAPSTONE.md is
 *in* the corpus and names example eval questions — the golden set has to
 account for both.
+
+**v04** made quality a number. [`evals/golden.jsonl`](evals/golden.jsonl):
+40 questions across locator / concept / code / cross-dive / negative
+(adversarial arrives with v06's fixtures).
+[`evals/run_evals.py`](evals/run_evals.py) scores five things per run —
+retrieval hit@k, citation resolve (do cited lines exist?), citation match
+(are they the expected files?), LLM-judged correctness against keypoints,
+and decline accuracy — plus cost and latency, because quality numbers
+without cost numbers are half a benchmark. Every run is stamped with a
+**corpus manifest** (HEAD SHA of all 17 corpus repos plus this tool), which
+is what makes the committed [`evals/baseline.run.json`](evals/baseline.run.json)
+reproducible rather than nostalgic.
+
+The frozen baseline, reported as measured (gpt-4o-mini, k=5, blend=0.7):
+**hit@5 0.886 · citation resolve 0.953 · citation match 0.721 · judged
+correctness 0.771 · decline accuracy 1.000 · $0.0004 and 2.7s per
+question.** The story is in the category split: concept 0.90 and locator
+0.88, but **code 0.56 and cross-dive 0.60** — chunk-level retrieval misses
+specific functions even when it finds the right file (file-level hit@5
+overstates chunk-level success), and paraphrased synthesis questions defeat
+both vector and keyword matching. That gap is exactly what v05's agentic
+retrieval gets to attack, with this baseline as the yardstick. Judge
+verdicts were spot-checked by hand before freezing (the four zero-scores:
+three honest pipeline failures kept as-is, one ambiguous golden question
+fixed and the whole set rerun). Run-to-run judge noise is real (~±0.02 on
+correctness) — trust deltas bigger than that, not smaller.

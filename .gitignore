@@ -13,3 +13,6 @@ venv/
 
 # The built index (regenerate with `askrepo index`; it's output, not source)
 index/
+
+# Eval runs are outputs — except the frozen baseline, which IS committed
+evals/runs/
