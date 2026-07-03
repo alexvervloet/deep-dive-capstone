@@ -150,13 +150,21 @@ def run(args):
     answer_cost = judge_cost = 0.0
     for q in golden:
         t0 = time.perf_counter()
-        messages, sources = prepare(q["question"], k=args.k, blend=blend)
-        answer = "".join(provider.complete(messages))
+        if args.mode == "agent":
+            from askrepo.agent import answer as agent_answer
+
+            answer, retrieved, n_calls, cost = agent_answer(
+                q["question"], corpus_root, provider
+            )
+        else:
+            messages, sources = prepare(q["question"], k=args.k, blend=blend)
+            answer = "".join(provider.complete(messages))
+            cost = cost_usd(provider) or 0.0
+            retrieved = [c["path"] for _, c in sources]
+            n_calls = None
         latency = time.perf_counter() - t0
-        cost = cost_usd(provider) or 0.0
         answer_cost += cost
 
-        retrieved = [c["path"] for _, c in sources]
         result = {
             "id": q["id"],
             "category": q["category"],
@@ -165,6 +173,8 @@ def run(args):
             "cost_usd": round(cost, 6),
             "latency_s": round(latency, 2),
         }
+        if n_calls is not None:
+            result["tool_calls"] = n_calls
 
         if q["answerable"]:
             result["hit"] = path_matches_any(retrieved, q["expected_files"])
@@ -186,12 +196,16 @@ def run(args):
         print(f"  {q['id']:<8} {marker:<14} ${cost:.4f}  {latency:.1f}s", file=sys.stderr)
 
     metrics = aggregate(results)
+    if args.mode == "agent":
+        metrics["mean_tool_calls"] = round(
+            sum(r.get("tool_calls", 0) for r in results) / len(results), 1
+        )
     run_data = {
         "created": datetime.datetime.now().isoformat(timespec="seconds"),
-        "mode": "rag",
+        "mode": args.mode,
         "provider": provider.name,
         "model": provider.model,
-        "embed_model": index["embed_model"],
+        "embed_model": index["embed_model"] if args.mode == "rag" else None,
         "k": args.k,
         "blend": blend,
         "corpus_manifest": corpus_manifest(corpus_root),
@@ -205,11 +219,11 @@ def run(args):
 
     os.makedirs(RUNS_DIR, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_path = os.path.join(RUNS_DIR, f"{stamp}.run.json")
+    out_path = os.path.join(RUNS_DIR, f"{stamp}-{args.mode}.run.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(run_data, f, indent=1)
 
-    report(metrics, run_data["totals"])
+    report(metrics, run_data["totals"], args.mode)
     if args.freeze_baseline:
         with open(BASELINE_PATH, "w", encoding="utf-8") as f:
             json.dump(run_data, f, indent=1)
@@ -217,7 +231,10 @@ def run(args):
     elif os.path.exists(BASELINE_PATH):
         with open(BASELINE_PATH, encoding="utf-8") as f:
             baseline = json.load(f)
-        print("\nvs baseline "
+        label = "baseline" if baseline["mode"] == args.mode else (
+            f"baseline (NOTE: different mode — baseline is {baseline['mode']!r})"
+        )
+        print(f"\nvs {label} "
               f"({baseline['created']}, {baseline['provider']}/{baseline['model']}):")
         for key, value in metrics.items():
             base = baseline["metrics"].get(key)
@@ -269,8 +286,8 @@ def aggregate(results):
     return metrics
 
 
-def report(metrics, totals):
-    print("\n=== eval results (mode=rag) ===")
+def report(metrics, totals, mode):
+    print(f"\n=== eval results (mode={mode}) ===")
     print(f"  questions            {metrics['n_questions']}")
     print(f"  hit@k                {metrics['hit_at_k']:.3f}")
     print(f"  citation resolve     {metrics['citation_resolve']:.3f}"
@@ -280,6 +297,8 @@ def report(metrics, totals):
     print(f"  decline accuracy     {metrics['decline_accuracy']}")
     print(f"  mean cost / question ${metrics['mean_cost_usd']:.6f}")
     print(f"  mean latency         {metrics['mean_latency_s']}s")
+    if "mean_tool_calls" in metrics:
+        print(f"  mean tool calls      {metrics['mean_tool_calls']}")
     print("  correctness by category:")
     for cat, score in metrics["correctness_by_category"].items():
         print(f"    {cat:<12} {score:.3f}")
@@ -289,6 +308,12 @@ def report(metrics, totals):
 
 def main():
     parser = argparse.ArgumentParser(description="Run the golden-set evals.")
+    parser.add_argument(
+        "--mode",
+        choices=["rag", "agent"],
+        default="rag",
+        help="rag: embed + retrieve (v03); agent: grep/read tool loop (v05)",
+    )
     parser.add_argument("--k", type=int, default=5, help="retrieval depth (default 5)")
     parser.add_argument(
         "--freeze-baseline",

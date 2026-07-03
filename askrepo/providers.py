@@ -8,9 +8,24 @@ where `messages` is the familiar [{"role": ..., "content": ...}, ...] list.
 After the stream is fully consumed, `provider.usage` holds the real
 (input_tokens, output_tokens) for the call — that's what the CLI prices.
 
+v05 adds a second contract for the agent loop (see agent.py):
+
+    step(messages, tools)          -> one non-streamed model turn: either
+                                      {"kind": "text", ...} or
+                                      {"kind": "tools", "calls": [...],
+                                       "assistant": <message to append>}
+    tool_results_messages(results) -> the message(s) that feed tool outputs
+                                      back, in this provider's wire shape
+
+The two APIs genuinely differ here (OpenAI: function-calling with role:"tool"
+messages; Claude: tool_use/tool_result content blocks) — the agents dive
+teaches both shapes, and these methods are where the difference is contained.
+
 The SDKs are imported lazily inside each provider so the mock keeps working
 on a machine with nothing installed. That's the v00 promise, kept.
 """
+
+import json
 
 # $ per 1M tokens (input, output) — same numbers as ../MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
@@ -107,6 +122,52 @@ class OpenAIProvider:
             if chunk.usage:  # the last chunk: no choices, just the totals
                 self.usage = (chunk.usage.prompt_tokens, chunk.usage.completion_tokens)
 
+    def step(self, messages, tools):
+        from openai import OpenAI
+
+        kwargs = {}
+        if tools:
+            kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
+        resp = OpenAI().chat.completions.create(
+            model=self.model, messages=messages, max_tokens=MAX_TOKENS, **kwargs
+        )
+        self.usage = (resp.usage.prompt_tokens, resp.usage.completion_tokens)
+        msg = resp.choices[0].message
+        if msg.tool_calls:
+            return {
+                "kind": "tools",
+                "calls": [
+                    {
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "args": json.loads(tc.function.arguments or "{}"),
+                    }
+                    for tc in msg.tool_calls
+                ],
+                "assistant": {
+                    "role": "assistant",
+                    "content": msg.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in msg.tool_calls
+                    ],
+                },
+            }
+        return {"kind": "text", "text": msg.content or ""}
+
+    def tool_results_messages(self, results):
+        return [
+            {"role": "tool", "tool_call_id": call_id, "content": output}
+            for call_id, output in results
+        ]
+
 
 class ClaudeProvider:
     """Claude messages, streamed. Needs ANTHROPIC_API_KEY (via secrun)."""
@@ -133,6 +194,53 @@ class ClaudeProvider:
                 yield text
             final = stream.get_final_message()
             self.usage = (final.usage.input_tokens, final.usage.output_tokens)
+
+    def step(self, messages, tools):
+        import anthropic
+
+        system, msgs = _split_system(messages)
+        kwargs = {"system": system} if system else {}
+        if tools:
+            kwargs["tools"] = [
+                {
+                    "name": t["name"],
+                    "description": t["description"],
+                    "input_schema": t["parameters"],
+                }
+                for t in tools
+            ]
+        resp = anthropic.Anthropic().messages.create(
+            model=self.model, max_tokens=MAX_TOKENS, messages=msgs, **kwargs
+        )
+        self.usage = (resp.usage.input_tokens, resp.usage.output_tokens)
+        if resp.stop_reason == "tool_use":
+            return {
+                "kind": "tools",
+                "calls": [
+                    {"id": b.id, "name": b.name, "args": b.input}
+                    for b in resp.content
+                    if b.type == "tool_use"
+                ],
+                # echo the content blocks back verbatim on the next turn —
+                # the API requires the assistant turn to precede tool_results
+                "assistant": {"role": "assistant", "content": resp.content},
+            }
+        return {
+            "kind": "text",
+            "text": "".join(b.text for b in resp.content if b.type == "text"),
+        }
+
+    def tool_results_messages(self, results):
+        # all results ride in ONE user message of tool_result blocks
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "tool_use_id": call_id, "content": output}
+                    for call_id, output in results
+                ],
+            }
+        ]
 
 
 PROVIDERS = {

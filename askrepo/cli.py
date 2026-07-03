@@ -35,8 +35,31 @@ def cmd_ask(args):
                 context_blocks.append(format_context(path, f.read()))
         messages = build_messages(args.question, context_blocks)
     elif provider.name == "mock":
-        # the mock can't embed a query; it stays the offline plumbing check
+        # the mock can't embed a query or drive a tool loop; it stays the
+        # offline plumbing check
         messages = build_messages(args.question, [])
+    elif args.mode == "agent":
+        from askrepo.agent import answer as agent_answer
+        from askrepo.retrieve import load_index
+
+        corpus_root = load_index()["corpus_root"]
+        text, touched, n_calls, cost = agent_answer(
+            args.question,
+            corpus_root,
+            provider,
+            on_tool=lambda name, targs: print(
+                f"tool: {name}({', '.join(f'{k}={v!r}' for k, v in targs.items())})",
+                file=sys.stderr,
+            ),
+        )
+        print(f"provider: {provider.name} ({provider.model})", file=sys.stderr)
+        print(text, flush=True)
+        print(
+            f"cost: ${cost:.6f} ({n_calls} tool calls, "
+            f"{len(touched)} files touched)",
+            file=sys.stderr,
+        )
+        return 0
     else:
         from askrepo.answer import prepare
 
@@ -118,6 +141,12 @@ def main(argv=None):
         type=int,
         default=5,
         help="how many chunks to retrieve (default 5)",
+    )
+    ask.add_argument(
+        "--mode",
+        choices=["rag", "agent"],
+        default="rag",
+        help="rag: embed + retrieve (v03); agent: grep/read tool loop (v05)",
     )
     ask.set_defaults(func=cmd_ask)
 

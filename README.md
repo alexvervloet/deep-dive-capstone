@@ -45,8 +45,8 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | `v02-prompt` | Prompt Engineering | **done** | citation contract: grounded answers with (path:line), declines the rest |
 | `v03-rag` | RAG | **done** | `index` + hybrid retrieval; `ask` grounds itself and cites real lines |
 | `v04-evals` | Evals | **done** | 40-question golden set, 5-metric runner, frozen baseline + corpus manifest |
-| `v05-agent` | Agents | next | tool-loop retrieval; measured RAG-vs-agent verdict |
-| `v06-hardened` | Prompt Injection | — | red-team suite; attack success before/after defenses |
+| `v05-agent` | Agents | **done** | grep/read tool loop; verdict: RAG wins here — see `evals/comparison.md` |
+| `v06-hardened` | Prompt Injection | next | red-team suite; attack success before/after defenses |
 | `v07-production` | Production | — | caching, cost budget, retries, structured logs |
 
 ## What exists so far
@@ -131,3 +131,30 @@ verdicts were spot-checked by hand before freezing (the four zero-scores:
 three honest pipeline failures kept as-is, one ambiguous golden question
 fixed and the whole set rerun). Run-to-run judge noise is real (~±0.02 on
 correctness) — trust deltas bigger than that, not smaller.
+
+**v05** built the other retrieval and ran the showdown.
+[`askrepo/agent.py`](askrepo/agent.py) is the agents dive's loop with three
+read-only, path-jailed tools — `grep`, `read_file`, `list_dir` — over the
+same corpus; tool output is line-numbered so the v02 citation contract
+carries over unchanged. Both providers drive it natively (OpenAI
+function-calling vs Claude tool_use — the wire formats differ, and
+`providers.py` is where that difference is contained). `ask --mode agent`
+shows the tool trace live; `run_evals.py --mode agent` scores it on the
+same golden set.
+
+**The verdict, as measured** ([`evals/comparison.md`](evals/comparison.md)):
+on this corpus with gpt-4o-mini, **RAG wins** — correctness 0.771 vs 0.657,
+at ~1/4 the cost ($0.0004 vs $0.0016/question) and ~1/3 the latency (2.7s
+vs 9.4s, 5.2 tool calls/question). The category split says why: ties on
+locator (0.875) and code (0.562), but the agent loses concept (0.60 vs
+0.90) and cross-dive (0.40 vs 0.60) — a small model greps for the
+question's words, finds a *plausible* file, and confidently answers from
+the wrong one (its citation-resolve is a perfect 1.000 while being wrong:
+**grounded ≠ right**), or burns its whole tool budget on paraphrase
+questions whose exact words appear nowhere. Embeddings match paraphrases;
+grep doesn't. The smoke tests showed the flip side — the agent aced the
+exact-name code lookups RAG had fumbled — but across the whole set that
+didn't compensate. The honest headline is the one the series teaches:
+*agentic retrieval is not strictly better; with a cheap model on a small,
+well-organized corpus, the loop is the bottleneck.* A stronger driver
+model would likely change this table — rerun it and see.
