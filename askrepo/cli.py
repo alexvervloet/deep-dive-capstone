@@ -1,12 +1,14 @@
 """The askrepo CLI.
 
-    python -m askrepo ask "your question" --context some/file.py
+    secrun python -m askrepo index ..          # embed the corpus, once
+    secrun python -m askrepo ask "question"    # retrieve, answer, cite
 
 v00 wired exactly one path: ask -> provider -> streamed answer. v02 put the
-prompt contract on that path: answers are grounded in --context files, cited
-(path:line), and declined when the context doesn't cover them. Later steps
-hang new subcommands off this skeleton (index, chat, eval, redteam) — see
-../CAPSTONE.md for the roadmap.
+prompt contract on that path (grounded, cited, declined otherwise). v03 made
+the grounding automatic: `index` builds a hybrid-searchable index, and `ask`
+retrieves its own context. `--context <file>` still overrides retrieval for
+hand-fed grounding. Later steps hang new subcommands off this skeleton (chat,
+eval, redteam) — see ../CAPSTONE.md for the roadmap.
 """
 
 import argparse
@@ -25,12 +27,29 @@ def cmd_ask(args):
         # contract off — the "before" picture. Kept so anyone can reproduce
         # the regression transcripts in evals/prompt_regression.md.
         messages = [{"role": "user", "content": args.question}]
-    else:
+    elif args.context:
+        # hand-fed grounding (the v02 path) — overrides retrieval
         context_blocks = []
         for path in args.context:
             with open(path, encoding="utf-8") as f:
                 context_blocks.append(format_context(path, f.read()))
         messages = build_messages(args.question, context_blocks)
+    elif provider.name == "mock":
+        # the mock can't embed a query; it stays the offline plumbing check
+        messages = build_messages(args.question, [])
+    else:
+        from askrepo.answer import prepare
+
+        messages, sources = prepare(
+            args.question, k=args.k, blend=float(config["BLEND"])
+        )
+        # show what was retrieved — retrieval is never a black box
+        for score, chunk in sources:
+            print(
+                f"retrieved: {chunk['path']}:{chunk['start_line']}-"
+                f"{chunk['end_line']} (score {score:.2f})",
+                file=sys.stderr,
+            )
 
     print(f"provider: {provider.name} ({provider.model})", file=sys.stderr)
     for chunk in provider.complete(messages):
@@ -58,6 +77,21 @@ def cmd_ask(args):
     return 0
 
 
+def cmd_index(args):
+    from askrepo.indexer import INDEX_PATH, build_index
+
+    config = load_config()
+    stack = config["PROVIDER"]
+    n_files, n_chunks, tokens, cost = build_index(args.path, stack)
+    print(
+        f"indexed {n_files} files -> {n_chunks} chunks "
+        f"({tokens} embedding tokens, ${cost:.4f})",
+        file=sys.stderr,
+    )
+    print(f"saved: {INDEX_PATH}", file=sys.stderr)
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="askrepo",
@@ -79,7 +113,19 @@ def main(argv=None):
         action="store_true",
         help="bypass the prompt contract (no grounding, no citations) — the 'before' picture",
     )
+    ask.add_argument(
+        "--k",
+        type=int,
+        default=5,
+        help="how many chunks to retrieve (default 5)",
+    )
     ask.set_defaults(func=cmd_ask)
+
+    index = subparsers.add_parser(
+        "index", help="chunk and embed a corpus directory"
+    )
+    index.add_argument("path", help="root of the corpus to index (e.g. ..)")
+    index.set_defaults(func=cmd_index)
 
     args = parser.parse_args(argv)
     return args.func(args)

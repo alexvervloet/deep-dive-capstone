@@ -9,3 +9,7 @@ openai>=1.30.0
 
 # Anthropic — used when PROVIDER=claude (messages, streamed).
 anthropic>=0.111.0
+
+# Voyage AI — embeddings for the claude stack (v03's index). Anthropic has no
+# first-party embeddings model; see ../MODELS.md.
+voyageai>=0.3.0

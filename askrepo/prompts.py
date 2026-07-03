@@ -85,10 +85,15 @@ FEW_SHOTS = [
 ]
 
 
-def format_context(path, text):
-    """One context block, line-numbered so citations have something to cite."""
+def format_context(path, text, start=1):
+    """One context block, line-numbered so citations have something to cite.
+
+    `start` is the text's first line number in the original file — retrieval
+    (v03) passes chunks from the middle of files, and the citation must point
+    at where the chunk actually lives, not at line 1.
+    """
     numbered = "\n".join(
-        f"{i}| {line}" for i, line in enumerate(text.splitlines(), start=1)
+        f"{i}| {line}" for i, line in enumerate(text.splitlines(), start=start)
     )
     return f'<context path="{path}">\n{numbered}\n</context>'
 

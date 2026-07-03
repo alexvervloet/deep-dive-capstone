@@ -19,6 +19,18 @@ PRICES = {
     "claude-haiku-4-5": (1.00, 5.00),
 }
 
+# Embeddings have no output tokens — you pay input only ($ per 1M tokens).
+# Anthropic has no first-party embeddings model; the claude stack uses Voyage
+# (its own SDK and key), exactly as the RAG dive teaches.
+EMBED_MODELS = {
+    "openai": "text-embedding-3-small",
+    "claude": "voyage-3.5",
+}
+EMBED_PRICES = {
+    "text-embedding-3-small": 0.02,
+    "voyage-3.5": 0.06,
+}
+
 MAX_TOKENS = 1024  # single-question answers; revisit when chat arrives
 
 
@@ -137,6 +149,41 @@ def get_provider(name, model=None):
         return PROVIDERS[name](model=model or None)
     raise SystemExit(
         f"PROVIDER={name!r} is not recognized. Use mock, openai, or claude."
+    )
+
+
+def embed(texts, stack, input_type="document"):
+    """Embed a batch of texts on the given stack ('openai' or 'claude').
+
+    Returns (vectors, total_tokens). `input_type` is "document" for things
+    you're storing, "query" for a search query — Voyage uses the hint to
+    optimize each side of retrieval; OpenAI ignores it.
+
+    The stack is an explicit argument (not read from PROVIDER) because the
+    query at ask-time MUST be embedded with the same model the index was
+    built with — vectors from different models live in different spaces and
+    comparing them is meaningless. retrieve.py reads the stack out of the
+    saved index and passes it here.
+    """
+    if not texts:
+        return [], 0
+    if stack == "openai":
+        from openai import OpenAI
+
+        resp = OpenAI().embeddings.create(
+            model=EMBED_MODELS["openai"], input=list(texts)
+        )
+        return [item.embedding for item in resp.data], resp.usage.total_tokens
+    if stack == "claude":
+        import voyageai
+
+        result = voyageai.Client().embed(
+            list(texts), model=EMBED_MODELS["claude"], input_type=input_type
+        )
+        return result.embeddings, result.total_tokens
+    raise SystemExit(
+        f"No embedding stack for PROVIDER={stack!r} — the mock can't embed. "
+        "Set PROVIDER=openai or PROVIDER=claude to build an index."
     )
 
 

@@ -40,13 +40,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 PROVIDER_DEPS = {
     "mock": [],
-    "openai": [("openai", "openai", "OpenAI chat, streamed")],
-    "claude": [("anthropic", "anthropic", "Claude messages, streamed")],
+    "openai": [("openai", "openai", "OpenAI chat + embeddings")],
+    "claude": [
+        ("anthropic", "anthropic", "Claude messages, streamed"),
+        ("voyageai", "voyageai", "Voyage embeddings (the claude stack's index)"),
+    ],
 }
 PROVIDER_KEYS = {
     "mock": [],
     "openai": [("OPENAI_API_KEY", "sk-", "sk-your-openai-key-here")],
-    "claude": [("ANTHROPIC_API_KEY", "sk-ant-", "sk-ant-your-key-here")],
+    "claude": [
+        ("ANTHROPIC_API_KEY", "sk-ant-", "sk-ant-your-key-here"),
+        ("VOYAGE_API_KEY", "pa-", "pa-your-voyage-key-here"),
+    ],
 }
 
 

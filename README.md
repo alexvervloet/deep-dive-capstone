@@ -24,8 +24,13 @@ For a real model, `pip install -r requirements.txt`, then `cp .env.example
 in `.env` — keychain + `secrun`, per [../SECRETS.md](../SECRETS.md):
 
 ```bash
-secrun python -m askrepo ask "hello"   # same question, real model, real cost line
+secrun python -m askrepo index ..      # embed the series (~$0.01, once)
+secrun python -m askrepo ask "which dive covers barge-in?"
 ```
+
+The answer arrives with `(path:line)` citations that resolve to real files,
+and stderr shows exactly which chunks were retrieved and what the call cost.
+`ask --context <file>` skips retrieval and grounds by hand (the v02 path).
 
 ## The step log
 
@@ -38,8 +43,8 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | `v00-scaffold` | — (house style) | **done** | CLI skeleton, mock provider, `check_setup.py`; runs offline |
 | `v01-chat` | OpenAI + Claude API | **done** | real streamed answers from either provider, priced from real token usage |
 | `v02-prompt` | Prompt Engineering | **done** | citation contract: grounded answers with (path:line), declines the rest |
-| `v03-rag` | RAG | next | index the series, ask, get cited answers |
-| `v04-evals` | Evals | — | golden set, runner, frozen baseline + corpus manifest |
+| `v03-rag` | RAG | **done** | `index` + hybrid retrieval; `ask` grounds itself and cites real lines |
+| `v04-evals` | Evals | next | golden set, runner, frozen baseline + corpus manifest |
 | `v05-agent` | Agents | — | tool-loop retrieval; measured RAG-vs-agent verdict |
 | `v06-hardened` | Prompt Injection | — | red-team suite; attack success before/after defenses |
 | `v07-production` | Production | — | caching, cost budget, retries, structured logs |
@@ -81,3 +86,22 @@ knowledge, live in
 seeds at v04. Side effect on the interface: the system prompt rides as a
 `{"role": "system"}` message, and each provider translates it to its API's
 shape (OpenAI: a message; Claude: the separate `system` parameter).
+
+**v03** made the grounding automatic — the heart of the project.
+[`indexer.py`](askrepo/indexer.py) walks a corpus and chunks it
+*structure-aware and line-tracking* (markdown at headings, Python at
+top-level `def`/`class`), so every chunk knows exactly where it lives and
+citations resolve to real lines. [`retrieve.py`](askrepo/retrieve.py) blends
+vector search with BM25 keyword scoring (both adapted from
+[../rag-deep-dive/rag/](../rag-deep-dive/rag/)) — the blend weight is a
+config knob (`BLEND`), not an assertion, because the RAG dive's own hybrid
+example showed 50/50 losing to vector-only on some queries; v04 measures it.
+[`answer.py`](askrepo/answer.py) glues retrieve → the v02 contract, and the
+CLI prints every retrieved chunk so retrieval is never a black box. Indexing
+the whole series: 380 files → 2,221 chunks, $0.0096. The query is always
+embedded with the model the index was built with (recorded in the index) —
+vectors from different models live in different spaces, so chat provider and
+embedding stack are deliberately independent. Two notes for v04: models may
+normalize cited paths (`../MODELS.md` → `MODELS.md`), and ../CAPSTONE.md is
+*in* the corpus and names example eval questions — the golden set has to
+account for both.
