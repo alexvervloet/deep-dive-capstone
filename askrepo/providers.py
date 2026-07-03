@@ -22,6 +22,19 @@ PRICES = {
 MAX_TOKENS = 1024  # single-question answers; revisit when chat arrives
 
 
+def _split_system(messages):
+    """Split a leading {"role": "system"} message from the rest.
+
+    The two APIs disagree here: OpenAI takes the system prompt as a message,
+    Claude as a separate `system` parameter (a whole lesson in the Claude API
+    dive). Providers that need the split call this; OpenAI passes messages
+    through untouched.
+    """
+    if messages and messages[0]["role"] == "system":
+        return messages[0]["content"], messages[1:]
+    return None, messages
+
+
 class MockProvider:
     """Answers offline with a canned response. Never calls a model.
 
@@ -96,10 +109,13 @@ class ClaudeProvider:
         import anthropic
 
         client = anthropic.Anthropic()
+        system, messages = _split_system(messages)
+        kwargs = {"system": system} if system else {}
         with client.messages.stream(
             model=self.model,
             max_tokens=MAX_TOKENS,
             messages=messages,
+            **kwargs,
         ) as stream:
             for text in stream.text_stream:
                 yield text

@@ -37,8 +37,8 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 |-----|----------------|--------|---------------|
 | `v00-scaffold` | — (house style) | **done** | CLI skeleton, mock provider, `check_setup.py`; runs offline |
 | `v01-chat` | OpenAI + Claude API | **done** | real streamed answers from either provider, priced from real token usage |
-| `v02-prompt` | Prompt Engineering | next | citation contract, declines off-topic asks |
-| `v03-rag` | RAG | — | index the series, ask, get cited answers |
+| `v02-prompt` | Prompt Engineering | **done** | citation contract: grounded answers with (path:line), declines the rest |
+| `v03-rag` | RAG | next | index the series, ask, get cited answers |
 | `v04-evals` | Evals | — | golden set, runner, frozen baseline + corpus manifest |
 | `v05-agent` | Agents | — | tool-loop retrieval; measured RAG-vs-agent verdict |
 | `v06-hardened` | Prompt Injection | — | red-team suite; attack success before/after defenses |
@@ -66,3 +66,18 @@ line is now real: each provider reports its actual token usage after the
 stream ends, and the CLI prices it with the same numbers as
 [../MODELS.md](../MODELS.md). The mock keeps working with nothing installed —
 the SDKs import lazily, so the v00 promise holds at every tag.
+
+**v02** taught it its job before giving it retrieval. The contract in
+[`askrepo/prompts.py`](askrepo/prompts.py): answer only from provided
+context, cite `(path:line)` for every claim, and reply "Not in this corpus."
+(verbatim — later steps score it mechanically) when the context doesn't
+cover the question. Context arrives by hand for now (`ask --context <file>`,
+line-numbered so citations have something to point at) — the point is that
+the contract is testable before the pipeline exists. `--raw` bypasses it to
+show the before-picture: real transcripts of both, including the model
+declining "What is the capital of France?" because grounding beats prior
+knowledge, live in
+[`evals/prompt_regression.md`](evals/prompt_regression.md) and become eval
+seeds at v04. Side effect on the interface: the system prompt rides as a
+`{"role": "system"}` message, and each provider translates it to its API's
+shape (OpenAI: a message; Claude: the separate `system` parameter).
