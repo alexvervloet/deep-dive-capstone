@@ -144,7 +144,18 @@ def run(args):
         golden = [json.loads(line) for line in f if line.strip()]
 
     provider = get_provider(config["PROVIDER"], model=config["MODEL"])
-    judge_provider = get_provider(config["PROVIDER"], model=config["MODEL"])
+    # The judge is measurement infrastructure, not the system under test, so it
+    # must stay CONSTANT across runs you compare — otherwise a correctness delta
+    # could be the answerer *or* the grader moving. JUDGE_PROVIDER/JUDGE_MODEL
+    # pin it (default: same as the answer provider, so existing baselines are
+    # unchanged). For the ext-local run: answer with local, but JUDGE_PROVIDER=
+    # openai keeps the same gpt-4o-mini judge the cloud baseline used — a fair
+    # A/B on the answerer alone. (Only the offline eval touches the cloud; the
+    # product path — index, retrieve, answer — stays fully local.)
+    judge_provider = get_provider(
+        os.getenv("JUDGE_PROVIDER") or config["PROVIDER"],
+        model=os.getenv("JUDGE_MODEL") or config["MODEL"],
+    )
     blend = float(config["BLEND"])
 
     # A per-session spend ceiling (v07). The eval loop is a real session —
@@ -217,6 +228,8 @@ def run(args):
         "mode": args.mode,
         "provider": provider.name,
         "model": provider.model,
+        "judge_provider": judge_provider.name,
+        "judge_model": judge_provider.model,
         "embed_model": index["embed_model"] if args.mode == "rag" else None,
         "k": args.k,
         "blend": blend,

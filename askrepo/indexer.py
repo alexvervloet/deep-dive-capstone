@@ -27,7 +27,10 @@ import re
 from askrepo.providers import EMBED_MODELS, EMBED_PRICES, embed
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INDEX_PATH = os.path.join(HERE, "index", "index.json")
+# ASKREPO_INDEX lets a local-embedded index live beside the cloud one instead
+# of overwriting it (ext-local) — so the eval comparison keeps both stacks'
+# indexes on disk at once:  ASKREPO_INDEX=index/index.local.json askrepo index ..
+INDEX_PATH = os.getenv("ASKREPO_INDEX") or os.path.join(HERE, "index", "index.json")
 
 INDEXED_EXTENSIONS = {".md", ".py"}
 SKIP_DIRS = {

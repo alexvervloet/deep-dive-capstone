@@ -45,6 +45,8 @@ PROVIDER_DEPS = {
         ("anthropic", "anthropic", "Claude messages, streamed"),
         ("voyageai", "voyageai", "Voyage embeddings (the claude stack's index)"),
     ],
+    # local (ext-local) reuses the openai SDK, pointed at Ollama's port
+    "local": [("openai", "openai", "the SDK, pointed at Ollama's OpenAI endpoint")],
 }
 PROVIDER_KEYS = {
     "mock": [],
@@ -53,6 +55,7 @@ PROVIDER_KEYS = {
         ("ANTHROPIC_API_KEY", "sk-ant-", "sk-ant-your-key-here"),
         ("VOYAGE_API_KEY", "pa-", "pa-your-voyage-key-here"),
     ],
+    "local": [],  # no key — that's the point; Ollama runs on your machine
 }
 
 
@@ -124,7 +127,11 @@ def check_keys(env, provider):
     print("\nAPI key")
     keys = PROVIDER_KEYS.get(provider, [])
     if not keys:
-        ok("none needed — the mock never calls a model.")
+        reason = {
+            "mock": "the mock never calls a model.",
+            "local": "local models run on your machine, not a paid API.",
+        }.get(provider, "this provider needs no key.")
+        ok(f"none needed — {reason}")
         return True
     all_ok = True
     for name, prefix, placeholder in keys:
@@ -140,6 +147,42 @@ def check_keys(env, provider):
     return all_ok
 
 
+def check_ollama(env):
+    """For PROVIDER=local: is Ollama up, and are the chat + embed models pulled?
+
+    Reaches the local server with the standard library only (no `requests`),
+    so the no-install promise holds. This is the one 'key' the local path has:
+    a running server with the right models."""
+    print("\nOllama (local models)")
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    host = _get(env, "OLLAMA_HOST") or "http://localhost:11434"
+    chat_model = _get(env, "LOCAL_MODEL") or _get(env, "MODEL") or "qwen3"
+    embed_model = _get(env, "LOCAL_EMBED_MODEL") or "nomic-embed-text"
+    try:
+        with urllib.request.urlopen(f"{host}/api/tags", timeout=3) as resp:
+            tags = _json.load(resp)
+    except (urllib.error.URLError, OSError):
+        fail(f"can't reach Ollama at {host}.")
+        print("    Start it:  ollama serve   (or launch the Ollama app)")
+        return False
+    ok(f"Ollama is running at {host}.")
+    present = {m.get("name", "").split(":")[0] for m in tags.get("models", [])}
+    all_ok = True
+    for kind, model in (("chat", chat_model), ("embeddings", embed_model)):
+        if model.split(":")[0] in present:
+            ok(f"{kind} model '{model}' is pulled.")
+        else:
+            fail(f"{kind} model '{model}' is not pulled.")
+            print(f"    Pull it:  ollama pull {model}")
+            all_ok = False
+    if not all_ok:
+        print("    (Both are needed: RAG embeds the corpus AND answers from it.)")
+    return all_ok
+
+
 def main():
     print(_c("Checking your setup for the deep-dive capstone...\n", "1"))
     env = _read_env_file()
@@ -150,13 +193,18 @@ def main():
         return 1
     deps = check_dependencies(provider)
     keys = check_keys(env, provider)
+    local = check_ollama(env) if provider == "local" else True
 
     print()
-    if py and deps and keys:
+    if py and deps and keys and local:
         print(_c("All set! 🎉", "1;32"))
         if provider == "mock":
             print('Start here:  python -m askrepo ask "hello"')
             print("(The mock is offline and free — no key needed.)")
+        elif provider == "local":
+            print('Start here:  python -m askrepo index ..   then   '
+                  'python -m askrepo ask "hello"')
+            print("(Local models run on your machine — no key, no secrun, no bill.)")
         else:
             print('Start here:  secrun python -m askrepo ask "hello"')
         return 0

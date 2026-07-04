@@ -59,6 +59,7 @@ merged to `main` with `--no-ff` and tagged `ext-*` — unordered add-ons from
 |-----|----------------|--------|--------------|
 | `ext-mcp` | MCP | **done** | `ask` + `search` as MCP tools — point Claude Code at this repo and the course answers questions about itself |
 | `ext-harness` | Agent Harnesses | **done** | permission policy + read-only sandbox + audit around agent mode's file tools — the structural fix for v06's residual |
+| `ext-local` | Local Models | **done** | Ollama backend for answers + embeddings — index a private repo without sending a byte out; the measured quality gap vs cloud |
 
 ### ext-mcp — the course as a tool server
 
@@ -128,6 +129,60 @@ find out. Honest limit: the harness stops tool *abuse* — reading what should
 never be read, running what was never allowed — but it cannot stop a plausible
 lie in a file the agent is *supposed* to read (v06's fact-poison, still the
 residual). No boundary on tools fixes that; reading the file was the job.
+
+### ext-local — index a private repo without sending a byte out
+
+The pitch is a real use case: point askrepo at a codebase you can't upload to a
+provider. [`askrepo/providers.py`](askrepo/providers.py) gains a `LocalProvider`
+that reuses *every line* of the OpenAI provider — streaming, tool-calling, usage
+accounting — and changes exactly one thing: it points the SDK at Ollama's
+OpenAI-compatible port (`localhost:11434/v1`). `embed()` gets a matching `local`
+stack (`nomic-embed-text`), so both halves of RAG — the index and the answer —
+run on your hardware, no key, `$0`. [`check_setup.py`](check_setup.py) pings
+Ollama and checks both models are pulled;
+[`ASKREPO_INDEX`](askrepo/indexer.py) lets a local-embedded index live beside
+the cloud one instead of clobbering it.
+
+The whole point is the honest number, so the eval got one fix first: the LLM
+judge is **measurement infrastructure, not the system under test**, so it must
+stay constant across runs you compare. A new `JUDGE_PROVIDER`/`JUDGE_MODEL`
+override ([`run_evals.py`](evals/run_evals.py)) answers with local Qwen while
+keeping the *same* gpt-4o-mini judge the cloud baseline used — a fair A/B on the
+answerer alone, not two moving variables.
+
+**The measured gap** (`qwen3:8b` + `nomic-embed-text` vs the v04 `gpt-4o-mini`
+baseline, same 40 questions, same judge — full table in
+[`evals/comparison-local.md`](evals/comparison-local.md)):
+
+| metric | cloud | local | delta |
+|---|---|---|---|
+| judged correctness | 0.771 | **0.843** | **+0.072** |
+| retrieval hit@k | 0.886 | 0.886 | +0.000 |
+| citation resolve | 0.953 | 0.781 | −0.172 |
+| citation match | 0.721 | 0.500 | −0.221 |
+| mean cost / question | $0.000407 | **$0** | free |
+| mean latency | 2.7s | 12.2s | **+9.5s** |
+
+The naive expectation ("cheaper but worse") only half held, and reporting it
+straight is the lesson:
+
+- **Retrieval was free parity** — `nomic-embed-text` matched OpenAI's embeddings
+  on hit@k *exactly* (0.886). The embedding half of the gap is zero.
+- **Local answered *better*, not worse** — correctness 0.843 vs 0.771, most of
+  it on `code` (0.75 vs 0.56). Same judge graded both, so it isn't style bias.
+  (One run; judge noise ~±0.02, so the +0.072 is real, a +0.01 wouldn't be.)
+- **The real regression is citation *format*, not grounding** — resolve/match
+  dropped, but of the 14 answers that failed the strict `(path:line)` parse,
+  **11 actually cite real sources**, just grouped like `(a.md:4, b.md:51)`
+  instead of one-per-paren. Only 3 were truly ungrounded. The small model
+  grounds its claims but follows askrepo's exact citation grammar less strictly.
+- **Latency is the tax you pay** — ~4.5× slower and the GPU is pegged while it
+  runs. On a laptop that's the felt cost, not the (zero) dollar cost.
+
+Honest headline: on this corpus the local stack matches cloud retrieval and
+edges it on correctness for `$0` — the privacy win costs *speed* and *citation-
+format fidelity*, not accuracy. A bigger local model would likely close the
+citation gap; the table says measure it, don't assume it.
 
 ## What exists so far
 
