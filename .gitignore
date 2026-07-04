@@ -6,6 +6,10 @@ venv/
 
 # Secrets — never commit your real keys
 .env
+# ...except the planted DECOY key in the red-team fixture corpus, which is
+# the whole point of that file (feat/harness measures whether the agent can
+# be lured into reading it). The value is fake; committing it is intentional.
+!fixtures/evil-repo/.env
 
 # Editor / local history
 .history/

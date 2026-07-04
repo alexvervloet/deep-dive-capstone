@@ -15,14 +15,23 @@ a matter of opinion: `run_evals.py --mode agent` measures both against the
 same golden set and baseline.
 
 Every tool output that shows file content shows it with `path:line` numbers,
-so the v02 citation contract carries over unchanged. All paths are jailed to
-the corpus root; the tools are read-only by construction. Output caps keep
-any single tool result from flooding the context window.
+so the v02 citation contract carries over unchanged. Output caps keep any
+single tool result from flooding the context window.
+
+Boundaries live in the harness (feat/harness, from harness.py): a permission
+policy decides *which* tools run, a read-only sandbox decides *what* they may
+touch, and an audit log records every proposed call and its verdict. v05's
+inline path jail became the sandbox's first rule; the rules it lacked —
+read_file could open any file inside the jail, a planted .env included —
+are now enforced in code the model can't argue with. Refusals go back to the
+model in-band ("error: ...") so the loop continues; the harness never crashes
+an answer, it just narrows what one can do.
 """
 
 import os
 import re
 
+from askrepo.harness import SandboxError, default_harness
 from askrepo.indexer import HERE as CAPSTONE_ROOT
 from askrepo.indexer import INDEXED_EXTENSIONS, SKIP_DIRS
 from askrepo.prompts import DECLINE_PHRASE
@@ -105,27 +114,19 @@ TOOL_SPECS = [
 ]
 
 
-def _resolve(corpus_root, rel):
-    """Path-jail: every path stays inside the corpus root."""
-    full = os.path.realpath(os.path.join(corpus_root, rel or "."))
-    root = os.path.realpath(corpus_root)
-    if full != root and not full.startswith(root + os.sep):
-        raise ValueError(f"path {rel!r} escapes the corpus")
-    return full
-
-
 def _skipped(dirpath, name):
     if name in SKIP_DIRS:
         return True
     return os.path.samefile(os.path.join(dirpath, name), CAPSTONE_ROOT)
 
 
-def tool_grep(corpus_root, pattern, path=None):
+def tool_grep(sandbox, pattern, path=None):
     try:
         rx = re.compile(pattern, re.IGNORECASE)
     except re.error as e:
         return f"error: bad regex: {e}"
-    base = _resolve(corpus_root, path)
+    corpus_root = sandbox.root
+    base = sandbox.resolve(path)
     hits = []
     targets = []
     if os.path.isfile(base):
@@ -153,13 +154,10 @@ def tool_grep(corpus_root, pattern, path=None):
     return "\n".join(hits) if hits else "no matches"
 
 
-def tool_read_file(corpus_root, path, start_line=1):
-    full = _resolve(corpus_root, path)
-    if not os.path.isfile(full):
-        return f"error: {path!r} is not a file"
+def tool_read_file(sandbox, path, start_line=1):
+    # the sandbox owns every read rule: jail, suffix allowlist, dotfile refusal
+    lines = sandbox.read_text(path).splitlines()
     start = max(1, int(start_line or 1))
-    with open(full, encoding="utf-8") as f:
-        lines = f.read().splitlines()
     window = lines[start - 1 : start - 1 + READ_MAX_LINES]
     if not window:
         return f"error: {path} has only {len(lines)} lines"
@@ -169,8 +167,8 @@ def tool_read_file(corpus_root, path, start_line=1):
     return body
 
 
-def tool_list_dir(corpus_root, path):
-    full = _resolve(corpus_root, path)
+def tool_list_dir(sandbox, path):
+    full = sandbox.resolve(path)
     if not os.path.isdir(full):
         return f"error: {path!r} is not a directory"
     entries = []
@@ -181,32 +179,53 @@ def tool_list_dir(corpus_root, path):
     return "\n".join(entries) if entries else "(empty)"
 
 
-def run_tool(corpus_root, name, args, touched):
+def run_tool(harness, name, args, touched):
+    """One proposed call through the full boundary: policy, then sandbox.
+
+    Every refusal returns as in-band `error: ...` text — the model gets to
+    see why and try something legitimate instead; the loop never dies on a
+    hostile suggestion.
+    """
+    from askrepo.harness import ALLOW, DENY
+
+    if harness.decide(name, args) != ALLOW:
+        return f"error: tool {name!r} denied by permission policy"
     try:
         if name == "grep":
-            out = tool_grep(corpus_root, args.get("pattern", ""), args.get("path"))
+            out = tool_grep(harness.sandbox, args.get("pattern", ""), args.get("path"))
             for line in out.splitlines():
                 if ":" in line and not line.startswith(("error", "no matches", "...")):
                     touched.add(line.split(":", 1)[0])
             return out
         if name == "read_file":
-            touched.add(os.path.normpath(args.get("path", "")))
-            return tool_read_file(corpus_root, args.get("path", ""), args.get("start_line", 1))
+            out = tool_read_file(harness.sandbox, args.get("path", ""), args.get("start_line", 1))
+            if not out.startswith("error"):  # a refused read didn't touch anything
+                touched.add(os.path.normpath(args.get("path", "")))
+            return out
         if name == "list_dir":
-            return tool_list_dir(corpus_root, args.get("path", "."))
+            return tool_list_dir(harness.sandbox, args.get("path", "."))
         return f"error: unknown tool {name!r}"
+    except SandboxError as e:
+        # the policy allowed the tool, but the sandbox refused these arguments —
+        # amend the audit trail so the flight recorder shows the block
+        harness.audit.record(name, args, DENY, note=f"sandbox: {e}")
+        return f"error: {e}"
     except (ValueError, OSError) as e:
         return f"error: {e}"
 
 
-def answer(question, corpus_root, provider, on_tool=None):
+def answer(question, corpus_root, provider, on_tool=None, harness=None):
     """Run the loop until the model answers or the tool budget runs out.
 
     Returns (answer_text, touched_paths, n_tool_calls, cost_usd_total).
     `touched` — files the agent grepped hits in or read — is the agent-mode
     analogue of "retrieved" for hit@k scoring (a generous analogue: touching
     a file isn't proof the model used it).
+
+    `harness` defaults to harness.default_harness(corpus_root) — the boundary
+    is on unless a caller (the red-team's before-picture) hands in another.
     """
+    harness = harness or default_harness(corpus_root)
     messages = [
         {"role": "system", "content": AGENT_SYSTEM},
         {"role": "user", "content": f"Question: {question}"},
@@ -223,7 +242,7 @@ def answer(question, corpus_root, provider, on_tool=None):
         messages.append(result["assistant"])
         outputs = []
         for call in result["calls"]:
-            output = run_tool(corpus_root, call["name"], call["args"], touched)
+            output = run_tool(harness, call["name"], call["args"], touched)
             outputs.append((call["id"], output))
             n_calls += 1
             if on_tool:

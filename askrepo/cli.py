@@ -30,20 +30,25 @@ def _produce(args, config, provider, trace):
 
     if args.mode == "agent" and provider.name != "mock":
         from askrepo.agent import answer as agent_answer
+        from askrepo.harness import default_harness
         from askrepo.retrieve import load_index
 
         with trace.span("agent_loop"):
             corpus_root = load_index()["corpus_root"]
+            harness = default_harness(corpus_root)
             text, touched, n_calls, cost = agent_answer(
                 args.question, corpus_root, provider,
                 on_tool=lambda name, targs: print(
                     f"tool: {name}({', '.join(f'{k}={v!r}' for k, v in targs.items())})",
                     file=sys.stderr,
                 ),
+                harness=harness,
             )
         print(text, flush=True)
+        denied = harness.audit.denied
         print(f"cost: ${cost:.6f} ({n_calls} tool calls, "
-              f"{len(touched)} files touched)", file=sys.stderr)
+              f"{len(touched)} files touched, {len(denied)} denied by harness)",
+              file=sys.stderr)
         trace.set(mode="agent", tool_calls=n_calls, cost_usd=round(cost, 6))
         return text, cost
 

@@ -51,11 +51,18 @@ def answer_rag(question, poisoned_path, provider, defend):
 
 
 def answer_agent(question, provider, defend):
+    # The agent's "defended" column bundles BOTH the advisory defenses (v06:
+    # prompt notice + output sanitize) AND the structural one (feat/harness:
+    # permission policy + read-only sandbox + audit). Undefended is the v05
+    # before-picture — permissive harness, any tool, any file inside the jail.
+    from askrepo.harness import default_harness, permissive_harness
+
+    harness = default_harness(FIXTURES) if defend else permissive_harness(FIXTURES)
     original = agent.AGENT_SYSTEM
     if defend:
         agent.AGENT_SYSTEM = guardrails.harden_system(original)
     try:
-        text, *_ = agent.answer(question, FIXTURES, provider)
+        text, *_ = agent.answer(question, FIXTURES, provider, harness=harness)
     finally:
         agent.AGENT_SYSTEM = original
     return guardrails.sanitize(text)[0] if defend else text
