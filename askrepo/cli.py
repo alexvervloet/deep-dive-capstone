@@ -7,8 +7,10 @@ v00 wired exactly one path: ask -> provider -> streamed answer. v02 put the
 prompt contract on that path (grounded, cited, declined otherwise). v03 made
 the grounding automatic: `index` builds a hybrid-searchable index, and `ask`
 retrieves its own context. `--context <file>` still overrides retrieval for
-hand-fed grounding. Later steps hang new subcommands off this skeleton (chat,
-eval, redteam) — see ../CAPSTONE.md for the roadmap.
+hand-fed grounding. Later steps hang new subcommands off this skeleton:
+`redteam` (v06), and `chat` (ext-context) — a multi-turn conversation that
+budgets the window across accumulating chunks and compacted turns. See
+../CAPSTONE.md for the roadmap.
 """
 
 import argparse
@@ -159,6 +161,74 @@ def cmd_redteam(args):
     return redteam.run(args.freeze)
 
 
+def cmd_chat(args):
+    """Multi-turn grounded chat (ext-context): one session, one window budget.
+
+    The v07 session budget fits chat naturally — a conversation is exactly the
+    long-lived session it was built for. Each turn retrieves fresh chunks; the
+    session decides which survive the window (askrepo/chat.py).
+    """
+    from askrepo.chat import context_line, new_session, respond
+    from askrepo.ops import Budget, BudgetExceeded, start_trace
+
+    config = load_config()
+    provider = get_provider(config["PROVIDER"], model=config["MODEL"])
+    budget = Budget(float(config["BUDGET"]))
+    session = new_session(args.window, provider)
+
+    print(f"provider: {provider.name} ({provider.model}) · window {args.window} tok "
+          f"(chunks {session.chunk_budget} / turns {session.memory.budget})",
+          file=sys.stderr)
+    if provider.name == "mock":
+        print("note: mock provider — no retrieval; conversation + compaction only.",
+              file=sys.stderr)
+
+    def one_turn(question):
+        with start_trace("chat") as trace:
+            trace.set(question=question, turn=session.turn + 1)
+            try:
+                budget.check()
+            except BudgetExceeded as e:
+                print(f"budget: {e}", file=sys.stderr)
+                return False
+            answer, cost = respond(session, question, provider)
+            budget.record(cost)
+            print(answer, flush=True)
+            if args.show_context:
+                print(context_line(session), file=sys.stderr)
+            print(f"cost: ${cost:.6f} (session ${budget.spent_usd:.6f})", file=sys.stderr)
+            trace.set(cost_usd=round(cost, 6), **{k: session.memory.info()[k]
+                      for k in ("compactions", "turns_sent")})
+            return True
+
+    # one-shot: a single question and exit
+    if args.question:
+        one_turn(" ".join(args.question))
+        return 0
+
+    # interactive REPL
+    print("chat with the corpus — 'quit' to exit, '/context' to toggle the "
+          "window view.", file=sys.stderr)
+    while True:
+        try:
+            line = input("you> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not line:
+            continue
+        if line.lower() in {"quit", "exit"}:
+            break
+        if line == "/context":
+            args.show_context = not args.show_context
+            print(f"  [context view {'on' if args.show_context else 'off'}]",
+                  file=sys.stderr)
+            continue
+        if not one_turn(line):
+            break  # budget exhausted
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="askrepo",
@@ -212,6 +282,24 @@ def main(argv=None):
         "--freeze", action="store_true", help="write evals/redteam.result.json"
     )
     redteam.set_defaults(func=cmd_redteam)
+
+    chat = subparsers.add_parser(
+        "chat", help="multi-turn grounded conversation with the corpus (ext-context)"
+    )
+    chat.add_argument(
+        "question", nargs="*",
+        help="ask once and exit; omit for an interactive REPL",
+    )
+    chat.add_argument(
+        "--window", type=int, default=6000,
+        help="token budget for the whole window (default 6000); split across "
+             "retrieved chunks and conversation turns",
+    )
+    chat.add_argument(
+        "--show-context", action="store_true",
+        help="print the per-turn window accounting (chunks kept/evicted, compactions)",
+    )
+    chat.set_defaults(func=cmd_chat)
 
     args = parser.parse_args(argv)
     return args.func(args)
