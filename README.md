@@ -49,7 +49,38 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | `v06-hardened` | Prompt Injection | **done** | poisoned fixtures corpus, defenses, before/after ASR — see `askrepo redteam` |
 | `v07-production` | Production | **done** | disk cache, session budget, retries, JSON traces — tests pass with no key |
 
-## What exists so far
+## Extensions
+
+The core (v00–v07) was a sequence; these are a set. Each is a feature branch
+merged to `main` with `--no-ff` and tagged `ext-*` — unordered add-ons from
+[../CAPSTONE.md](../CAPSTONE.md)'s branch-off table, not next steps.
+
+| Tag | Dive exercised | Status | What it adds |
+|-----|----------------|--------|--------------|
+| `ext-mcp` | MCP | **done** | `ask` + `search` as MCP tools — point Claude Code at this repo and the course answers questions about itself |
+
+### ext-mcp — the course as a tool server
+
+[`askrepo/mcp_server.py`](askrepo/mcp_server.py) puts the whole pipeline
+behind the protocol the MCP dive teaches: `search` returns line-numbered,
+citation-ready chunks for the *host's* model to read; `ask` returns one
+finished, cited answer. [`.mcp.json`](.mcp.json) wires it into Claude Code —
+open this repo there and ask "which dive covers barge-in?" to close the meta
+loop. One launch wrinkle worth knowing: MCP hosts spawn servers without your
+shell, so the zsh `secrun` *function* doesn't exist there —
+[`secrun.sh`](secrun.sh) is the same keychain injection as a script, and it
+must be the server *command* itself, because MCP clients hand servers a
+restricted environment rather than inheriting yours.
+
+Two earlier steps carry over on purpose. **v06:** an MCP answer is delivered
+into another agent's context — exactly the injection channel the red-team
+measured — so `ask` hardens the prompt and sanitizes the output
+unconditionally, and `search` labels its blocks as untrusted data (a tripwire,
+not a wall: the host's model is out of our hands). **v07:** a server is a
+long-lived session, which is what the budget was built for; and because the
+answer cache is disk-backed, a repeated `ask` is `$0.000000` *across server
+restarts* — measured: the same question cost $0.000407 from one server
+process and $0 from the next.
 
 **v00** proved the plumbing: `ask` sends your question through the full path
 (CLI → provider → streamed answer) and the mock provider answers with a canned

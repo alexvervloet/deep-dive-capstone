@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "askrepo": {
+      "command": "./secrun.sh",
+      "args": [".venv/bin/python", "-m", "askrepo.mcp_server"],
+      "env": {
+        "PROVIDER": "openai"
+      }
+    }
+  }
+}
