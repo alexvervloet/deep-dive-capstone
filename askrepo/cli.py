@@ -20,84 +20,115 @@ from askrepo.prompts import build_messages, format_context
 from askrepo.providers import cost_usd, get_provider
 
 
-def cmd_ask(args):
-    config = load_config()
-    provider = get_provider(config["PROVIDER"], model=config["MODEL"])
+def _produce(args, config, provider, trace):
+    """Run the requested mode, streaming to stdout, and return (text, cost).
 
-    if args.raw:
-        # contract off — the "before" picture. Kept so anyone can reproduce
-        # the regression transcripts in evals/prompt_regression.md.
-        messages = [{"role": "user", "content": args.question}]
-    elif args.context:
-        # hand-fed grounding (the v02 path) — overrides retrieval
-        context_blocks = []
-        for path in args.context:
-            with open(path, encoding="utf-8") as f:
-                context_blocks.append(format_context(path, f.read()))
-        messages = build_messages(args.question, context_blocks)
-    elif provider.name == "mock":
-        # the mock can't embed a query or drive a tool loop; it stays the
-        # offline plumbing check
-        messages = build_messages(args.question, [])
-    elif args.mode == "agent":
+    All the v01-v05 answer paths live here; cmd_ask wraps this with the v07
+    ops layer (cache, budget, trace) so those concerns stay in one place.
+    """
+    print(f"provider: {provider.name} ({provider.model})", file=sys.stderr)
+
+    if args.mode == "agent" and provider.name != "mock":
         from askrepo.agent import answer as agent_answer
         from askrepo.retrieve import load_index
 
-        corpus_root = load_index()["corpus_root"]
-        text, touched, n_calls, cost = agent_answer(
-            args.question,
-            corpus_root,
-            provider,
-            on_tool=lambda name, targs: print(
-                f"tool: {name}({', '.join(f'{k}={v!r}' for k, v in targs.items())})",
-                file=sys.stderr,
-            ),
-        )
-        print(f"provider: {provider.name} ({provider.model})", file=sys.stderr)
+        with trace.span("agent_loop"):
+            corpus_root = load_index()["corpus_root"]
+            text, touched, n_calls, cost = agent_answer(
+                args.question, corpus_root, provider,
+                on_tool=lambda name, targs: print(
+                    f"tool: {name}({', '.join(f'{k}={v!r}' for k, v in targs.items())})",
+                    file=sys.stderr,
+                ),
+            )
         print(text, flush=True)
-        print(
-            f"cost: ${cost:.6f} ({n_calls} tool calls, "
-            f"{len(touched)} files touched)",
-            file=sys.stderr,
-        )
-        return 0
+        print(f"cost: ${cost:.6f} ({n_calls} tool calls, "
+              f"{len(touched)} files touched)", file=sys.stderr)
+        trace.set(mode="agent", tool_calls=n_calls, cost_usd=round(cost, 6))
+        return text, cost
+
+    # build the messages for the requested grounding
+    if args.raw:
+        messages = [{"role": "user", "content": args.question}]
+    elif args.context:
+        blocks = []
+        for path in args.context:
+            with open(path, encoding="utf-8") as f:
+                blocks.append(format_context(path, f.read()))
+        messages = build_messages(args.question, blocks)
+    elif provider.name == "mock":
+        messages = build_messages(args.question, [])  # offline plumbing check
     else:
         from askrepo.answer import prepare
 
-        messages, sources = prepare(
-            args.question, k=args.k, blend=float(config["BLEND"])
-        )
-        # show what was retrieved — retrieval is never a black box
-        for score, chunk in sources:
-            print(
-                f"retrieved: {chunk['path']}:{chunk['start_line']}-"
-                f"{chunk['end_line']} (score {score:.2f})",
-                file=sys.stderr,
+        with trace.span("retrieve"):
+            messages, sources = prepare(
+                args.question, k=args.k, blend=float(config["BLEND"])
             )
+        for score, chunk in sources:
+            print(f"retrieved: {chunk['path']}:{chunk['start_line']}-"
+                  f"{chunk['end_line']} (score {score:.2f})", file=sys.stderr)
 
-    print(f"provider: {provider.name} ({provider.model})", file=sys.stderr)
-    for chunk in provider.complete(messages):
-        print(chunk, end="", flush=True)
-    # flush before the stderr cost line so the two streams can't interleave
-    # when stdout is piped
-    print(flush=True)
-    # Cost transparency from day zero: every answer says what it cost, priced
-    # from the provider's real token usage (the mock's honest number is zero).
+    parts = []
+    with trace.span("generate"):
+        for piece in provider.complete(messages):
+            print(piece, end="", flush=True)
+            parts.append(piece)
+    print(flush=True)  # flush before the stderr line so streams don't interleave
+
     cost = cost_usd(provider)
-    input_tokens, output_tokens = provider.usage
+    in_tok, out_tok = provider.usage
     if cost is None:
-        print(
-            f"tokens: {input_tokens} in / {output_tokens} out "
-            f"(no price on file for {provider.model} — see ../MODELS.md)",
-            file=sys.stderr,
-        )
+        print(f"tokens: {in_tok} in / {out_tok} out "
+              f"(no price on file for {provider.model} — see ../MODELS.md)",
+              file=sys.stderr)
+        cost = 0.0
     else:
-        # six decimals: a cheap real call is ~$0.00002, and "$0.0000" would
-        # lie that it was free — only the mock gets to print a true zero
-        print(
-            f"cost: ${cost:.6f} ({input_tokens} in / {output_tokens} out)",
-            file=sys.stderr,
-        )
+        # six decimals: a cheap real call is ~$0.00002; "$0.0000" would lie
+        # that it was free — only the mock prints a true zero
+        print(f"cost: ${cost:.6f} ({in_tok} in / {out_tok} out)", file=sys.stderr)
+    trace.set(mode=args.mode, input_tokens=in_tok, output_tokens=out_tok,
+              cost_usd=round(cost, 6))
+    return "".join(parts), cost
+
+
+def cmd_ask(args):
+    from askrepo.ops import Budget, BudgetExceeded, ResponseCache, cache_key, start_trace
+    from askrepo.prompts import CONTRACT_VERSION
+
+    config = load_config()
+    provider = get_provider(config["PROVIDER"], model=config["MODEL"])
+
+    # cache key over everything that shapes the answer: any change busts it
+    key = cache_key(
+        provider.name, provider.model, CONTRACT_VERSION, args.mode,
+        args.k, config["BLEND"], bool(args.raw), tuple(args.context), args.question,
+    )
+    cache = ResponseCache()
+    budget = Budget(float(config["BUDGET"]))
+
+    with start_trace("ask") as trace:
+        trace.set(question=args.question, cache_key=key)
+        if not args.no_cache:
+            cached = cache.get(key)
+            if cached is not None:
+                print(f"provider: {provider.name} (cache hit)", file=sys.stderr)
+                print(cached, flush=True)
+                print("cost: $0.000000 (served from cache)", file=sys.stderr)
+                trace.set(cache="hit", cost_usd=0.0)
+                return 0
+        trace.set(cache="miss")
+
+        try:
+            budget.check()  # refuse to start a call once the ceiling is hit
+        except BudgetExceeded as e:
+            print(f"budget: {e}", file=sys.stderr)
+            return 2
+
+        text, cost = _produce(args, config, provider, trace)
+        budget.record(cost)
+        if not args.no_cache and provider.name != "mock" and text.strip():
+            cache.set(key, text)
     return 0
 
 
@@ -155,6 +186,11 @@ def main(argv=None):
         choices=["rag", "agent"],
         default="rag",
         help="rag: embed + retrieve (v03); agent: grep/read tool loop (v05)",
+    )
+    ask.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="skip the answer cache — always call the model (v07)",
     )
     ask.set_defaults(func=cmd_ask)
 

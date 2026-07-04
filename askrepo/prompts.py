@@ -12,6 +12,10 @@ the point: the contract is testable before the pipeline exists, and these
 rules are what retrieval (v03) will be plugged into.
 """
 
+# Bump when the contract below changes — it's part of the answer cache key
+# (v07), so editing the rules never serves an answer shaped by the old ones.
+CONTRACT_VERSION = "2"
+
 # Verbatim decline marker. The eval runner (v04) scores a `negative`-category
 # question as correct iff the answer contains this exact phrase.
 DECLINE_PHRASE = "Not in this corpus."

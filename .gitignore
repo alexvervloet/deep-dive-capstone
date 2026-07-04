@@ -11,7 +11,7 @@ venv/
 .history/
 .vscode/
 
-# The built index (regenerate with `askrepo index`; it's output, not source)
+# The built index and answer cache (regenerated; outputs, not source)
 index/
 
 # Eval runs are outputs — except the frozen baseline, which IS committed

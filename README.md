@@ -47,7 +47,7 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 | `v04-evals` | Evals | **done** | 40-question golden set, 5-metric runner, frozen baseline + corpus manifest |
 | `v05-agent` | Agents | **done** | grep/read tool loop; verdict: RAG wins here — see `evals/comparison.md` |
 | `v06-hardened` | Prompt Injection | **done** | poisoned fixtures corpus, defenses, before/after ASR — see `askrepo redteam` |
-| `v07-production` | Production | next | caching, cost budget, retries, structured logs |
+| `v07-production` | Production | **done** | disk cache, session budget, retries, JSON traces — tests pass with no key |
 
 ## What exists so far
 
@@ -203,3 +203,32 @@ What each attack showed, honestly:
   table reports what the defenses didn't stop, not just what they did.**
 - Benign controls answered correctly in every cell (`nimbus serve`, port
   8080) — the defenses block attacks without blocking normal answers.
+
+**v07** wrapped the model call in the dozen lines that make it operable —
+[`askrepo/ops.py`](askrepo/ops.py), adapting all four of the production
+dive's modules (cache, cost, reliability, observability):
+
+- **Cache** — a repeated question is a visible cache hit at `$0.000000`. The
+  one adaptation the server-oriented dive doesn't need: the cache is
+  *disk-backed*, because a CLI is one question per process — an in-memory
+  cache would never hit across invocations. The key hashes everything that
+  shapes the answer (model, prompt-contract version, mode, k, blend,
+  question), so any change busts it rather than serving stale.
+- **Budget** — a per-session USD ceiling that refuses instead of overspending.
+  It's most honest in a real session: `run_evals.py --budget 0.002` stops
+  the run after 5 questions with `budget stop … would be exceeded`, rather
+  than quietly finishing the bill. (A single CLI ask can't pre-judge its
+  first call without a cost estimate, so the budget is genuinely
+  session-scoped — stated plainly rather than faked with a guessed estimate.)
+- **Retries** — `with_retry` wraps the embedding call (one clean request, the
+  ideal retry target) with exponential backoff + jitter, retrying only
+  transient failures (rate limits, timeouts, 5xx) and never a 400 that's your
+  own bug. The provider SDKs add their own retry layer on top.
+- **Traces** — `ASKREPO_LOG=info` emits one JSON line per request (trace_id,
+  timed spans, tokens, cost, cache hit/miss) that reconstructs the request
+  after the fact; off by default so normal output stays clean.
+
+And the point of the whole layer: **the [26-test suite](tests/) runs entirely
+on the mock** — cache, budget, retries, guardrails, chunkers, prompt assembly,
+and the offline CLI path — in 2ms with no key, no network. `python -m unittest
+discover -s tests`. CI never needs a secret.

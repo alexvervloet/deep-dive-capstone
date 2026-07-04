@@ -102,7 +102,12 @@ def retrieve(question, index, k=5, blend=0.7):
     Returns a list of (score, chunk) pairs, best first.
     """
     chunks = index["chunks"]
-    query_vector, _ = embed([question], index["stack"], input_type="query")
+    # embedding is one clean request — the ideal thing to retry on a blip
+    from askrepo.ops import with_retry
+
+    query_vector, _ = with_retry(
+        lambda: embed([question], index["stack"], input_type="query")
+    )
     vector_scores = [cosine_similarity(query_vector[0], c["vector"]) for c in chunks]
     keyword_scores = BM25([c["text"] for c in chunks]).scores(question)
 

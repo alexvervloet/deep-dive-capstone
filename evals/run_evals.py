@@ -42,6 +42,7 @@ sys.path.insert(0, ROOT)
 
 from askrepo.answer import prepare  # noqa: E402
 from askrepo.config import load_config  # noqa: E402
+from askrepo.ops import Budget, BudgetExceeded  # noqa: E402
 from askrepo.prompts import DECLINE_PHRASE  # noqa: E402
 from askrepo.providers import cost_usd, get_provider  # noqa: E402
 from askrepo.retrieve import load_index  # noqa: E402
@@ -146,9 +147,19 @@ def run(args):
     judge_provider = get_provider(config["PROVIDER"], model=config["MODEL"])
     blend = float(config["BLEND"])
 
+    # A per-session spend ceiling (v07). The eval loop is a real session —
+    # 40 calls in one process — so a runaway or a too-low ceiling stops the
+    # run instead of quietly running up the bill.
+    budget = Budget(args.budget)
+
     results = []
     answer_cost = judge_cost = 0.0
     for q in golden:
+        try:
+            budget.check()
+        except BudgetExceeded as e:
+            print(f"\nbudget stop after {len(results)} questions: {e}", file=sys.stderr)
+            break
         t0 = time.perf_counter()
         if args.mode == "agent":
             from askrepo.agent import answer as agent_answer
@@ -164,6 +175,7 @@ def run(args):
             n_calls = None
         latency = time.perf_counter() - t0
         answer_cost += cost
+        budget.record(cost)
 
         result = {
             "id": q["id"],
@@ -315,6 +327,10 @@ def main():
         help="rag: embed + retrieve (v03); agent: grep/read tool loop (v05)",
     )
     parser.add_argument("--k", type=int, default=5, help="retrieval depth (default 5)")
+    parser.add_argument(
+        "--budget", type=float, default=0.0,
+        help="per-session USD ceiling; the run stops before exceeding it (0 = unlimited)",
+    )
     parser.add_argument(
         "--freeze-baseline",
         action="store_true",

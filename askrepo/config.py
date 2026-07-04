@@ -13,6 +13,7 @@ DEFAULTS = {
     "PROVIDER": "mock",
     "MODEL": "",  # each provider picks its own default; set here to override
     "BLEND": "0.7",  # hybrid retrieval: vector weight (1.0 = vector-only, 0.0 = keyword-only)
+    "BUDGET": "0",   # per-session spend ceiling in USD; 0 = unlimited (v07)
 }
 
 
