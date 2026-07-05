@@ -184,6 +184,23 @@ edges it on correctness for `$0` — the privacy win costs *speed* and *citation
 format fidelity*, not accuracy. A bigger local model would likely close the
 citation gap; the table says measure it, don't assume it.
 
+**"Local" means any OpenAI-compatible server — including another machine.**
+Because `LocalProvider` only points the SDK at an endpoint, the backend isn't
+tied to Ollama: LM Studio, llama.cpp's `llama-server`, vLLM, LocalAI all speak
+the same `/v1`. Point askrepo at one with `LOCAL_BASE_URL` (a full URL, used
+verbatim), keep a real token in `LOCAL_API_KEY` if the server wants one, and
+split embeddings onto a different box with `LOCAL_EMBED_BASE_URL` if your runner
+serves chat but not embeddings. **Verified end to end against LM Studio on a
+separate machine** (`unsloth/qwen3.6-35b-a3b` + `text-embedding-qwen3-embedding-0.6b`
+at `192.168.1.106:1234`): remote embeddings built the index, remote retrieval
+and a remote answer came back with resolving `(path:line)` citations, `$0`.
+Two gotchas that path surfaced, both handled: bind the remote runner to
+`0.0.0.0` (not `localhost`) or nothing off-box can reach it; and **thinking
+models** (qwen3, deepseek-r1) spend the output budget *reasoning* before the
+answer — a small cap returns a blank `content`, so local defaults to an 8192-token
+budget (`LOCAL_MAX_TOKENS`). `python check_setup.py` probes the `/v1/models`
+endpoint to confirm reachability and that both models are served.
+
 ## What exists so far
 
 **v00** proved the plumbing: `ask` sends your question through the full path

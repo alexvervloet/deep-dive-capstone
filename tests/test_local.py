@@ -58,13 +58,31 @@ class TestLocalProvider(unittest.TestCase):
             # constructed fresh so it re-reads the env default
             self.assertEqual(providers.LocalProvider().model, "phi3.5")
 
-    def test_points_the_sdk_at_ollama(self):
-        with patch("openai.OpenAI", FakeOpenAI):
+    def test_points_the_sdk_at_the_default_local_server(self):
+        with patch("openai.OpenAI", FakeOpenAI), patch.dict(os.environ, {}, clear=False):
+            for var in ("LOCAL_BASE_URL", "OLLAMA_HOST"):
+                os.environ.pop(var, None)
             list(get_provider("local", model="qwen3").complete(
                 [{"role": "user", "content": "hi"}]))
         self.assertEqual(FakeOpenAI.last_kwargs.get("base_url"),
-                         providers.LOCAL_BASE_URL)
+                         "http://localhost:11434/v1")
         self.assertEqual(FakeOpenAI.last_kwargs.get("api_key"), "ollama")
+
+    def test_local_base_url_override_used_verbatim(self):
+        # a full URL (LM Studio, vLLM, another machine) is used as-is — no /v1 tacked on
+        with patch("openai.OpenAI", FakeOpenAI), \
+             patch.dict(os.environ, {"LOCAL_BASE_URL": "http://192.168.1.9:1234/v1",
+                                     "LOCAL_API_KEY": "sk-secret"}):
+            list(get_provider("local").complete([{"role": "user", "content": "hi"}]))
+        self.assertEqual(FakeOpenAI.last_kwargs.get("base_url"), "http://192.168.1.9:1234/v1")
+        self.assertEqual(FakeOpenAI.last_kwargs.get("api_key"), "sk-secret")
+
+    def test_ollama_host_still_appends_v1_for_backcompat(self):
+        with patch("openai.OpenAI", FakeOpenAI), \
+             patch.dict(os.environ, {"OLLAMA_HOST": "http://box:11434"}):
+            os.environ.pop("LOCAL_BASE_URL", None)
+            list(get_provider("local").complete([{"role": "user", "content": "hi"}]))
+        self.assertEqual(FakeOpenAI.last_kwargs.get("base_url"), "http://box:11434/v1")
 
     def test_openai_provider_still_talks_to_openai_proper(self):
         # the refactor must NOT leak the local base_url into the cloud provider
@@ -77,11 +95,23 @@ class TestLocalProvider(unittest.TestCase):
         p.usage = (1000, 1000)
         self.assertEqual(cost_usd(p), 0.0)
 
-    def test_local_embeddings_use_the_local_endpoint_and_model(self):
-        with patch("openai.OpenAI", FakeOpenAI):
+    def test_local_gets_generous_reasoning_headroom(self):
+        # thinking models spend output tokens reasoning before the answer, so
+        # local's budget must exceed the cloud default (a 1024 cap can be fully
+        # consumed by reasoning, leaving content empty)
+        from askrepo.providers import MAX_TOKENS
+        self.assertGreater(get_provider("local").max_tokens, MAX_TOKENS)
+        with patch.dict(os.environ, {"LOCAL_MAX_TOKENS": "20000"}):
+            self.assertEqual(providers.LocalProvider().max_tokens, 20000)
+
+    def test_embeddings_can_target_a_separate_endpoint(self):
+        # a runner that serves chat but not embeddings: point embeddings elsewhere
+        with patch("openai.OpenAI", FakeOpenAI), \
+             patch.dict(os.environ, {"LOCAL_BASE_URL": "http://chat-box:1234/v1",
+                                     "LOCAL_EMBED_BASE_URL": "http://embed-box:11434/v1"}):
             vecs, toks = embed(["a", "b"], stack="local")
         self.assertEqual(len(vecs), 2)
-        self.assertEqual(FakeOpenAI.last_kwargs.get("base_url"), providers.LOCAL_BASE_URL)
+        self.assertEqual(FakeOpenAI.last_kwargs.get("base_url"), "http://embed-box:11434/v1")
 
     def test_embed_falls_back_when_usage_missing(self):
         # Ollama sometimes omits usage; embed() must estimate, not crash

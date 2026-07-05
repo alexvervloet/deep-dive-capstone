@@ -147,36 +147,45 @@ def check_keys(env, provider):
     return all_ok
 
 
-def check_ollama(env):
-    """For PROVIDER=local: is Ollama up, and are the chat + embed models pulled?
+def check_local_server(env):
+    """For PROVIDER=local: is the OpenAI-compatible server reachable, and does it
+    serve the configured chat + embed models?
 
-    Reaches the local server with the standard library only (no `requests`),
-    so the no-install promise holds. This is the one 'key' the local path has:
-    a running server with the right models."""
-    print("\nOllama (local models)")
+    Works for any runner (Ollama, LM Studio, llama.cpp, vLLM...), on this box or
+    another — it probes the standard `/v1/models` endpoint they all expose.
+    Standard library only, so the no-install promise holds."""
+    print("\nLocal model server")
     import json as _json
     import urllib.error
     import urllib.request
 
-    host = _get(env, "OLLAMA_HOST") or "http://localhost:11434"
+    base = _get(env, "LOCAL_BASE_URL") or (
+        (_get(env, "OLLAMA_HOST") or "http://localhost:11434") + "/v1")
     chat_model = _get(env, "LOCAL_MODEL") or _get(env, "MODEL") or "qwen3"
     embed_model = _get(env, "LOCAL_EMBED_MODEL") or "nomic-embed-text"
+    api_key = _get(env, "LOCAL_API_KEY")
+
+    req = urllib.request.Request(f"{base}/models")
+    if api_key:
+        req.add_header("Authorization", f"Bearer {api_key}")
     try:
-        with urllib.request.urlopen(f"{host}/api/tags", timeout=3) as resp:
-            tags = _json.load(resp)
-    except (urllib.error.URLError, OSError):
-        fail(f"can't reach Ollama at {host}.")
-        print("    Start it:  ollama serve   (or launch the Ollama app)")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            served = {m.get("id", "") for m in _json.load(resp).get("data", [])}
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        fail(f"can't reach a local model server at {base} ({e}).")
+        print("    Start your runner (Ollama / LM Studio / llama.cpp / vLLM). If")
+        print("    it's on another machine, bind it to 0.0.0.0 and set LOCAL_BASE_URL.")
         return False
-    ok(f"Ollama is running at {host}.")
-    present = {m.get("name", "").split(":")[0] for m in tags.get("models", [])}
+    ok(f"reached the server at {base} ({len(served)} models served).")
     all_ok = True
     for kind, model in (("chat", chat_model), ("embeddings", embed_model)):
-        if model.split(":")[0] in present:
-            ok(f"{kind} model '{model}' is pulled.")
+        # exact id, or a forgiving substring match (runners vary on how they
+        # advertise a loaded model's id vs the name you pass as `model`)
+        if model in served or any(model in s or s in model for s in served if s):
+            ok(f"{kind} model '{model}' is served.")
         else:
-            fail(f"{kind} model '{model}' is not pulled.")
-            print(f"    Pull it:  ollama pull {model}")
+            fail(f"{kind} model '{model}' isn't in the served list.")
+            print("    Load it in your runner, or check the exact id it advertises.")
             all_ok = False
     if not all_ok:
         print("    (Both are needed: RAG embeds the corpus AND answers from it.)")
@@ -193,7 +202,7 @@ def main():
         return 1
     deps = check_dependencies(provider)
     keys = check_keys(env, provider)
-    local = check_ollama(env) if provider == "local" else True
+    local = check_local_server(env) if provider == "local" else True
 
     print()
     if py and deps and keys and local:

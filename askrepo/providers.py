@@ -28,11 +28,31 @@ on a machine with nothing installed. That's the v00 promise, kept.
 import json
 import os
 
-# Ollama's OpenAI-compatible endpoint (ext-local). The whole local backend is
-# "point the OpenAI SDK here instead" — same wire format, your hardware, no key
-# and no per-token bill. The dummy api_key is required by the SDK but ignored
-# by Ollama. Override the host with OLLAMA_HOST if the server isn't local.
-LOCAL_BASE_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/v1"
+# The local backend is "point the OpenAI SDK somewhere that speaks the same
+# wire format" — which every runner does (Ollama, LM Studio, llama.cpp, vLLM,
+# LocalAI...), on this box or another. So "local" isn't Ollama-specific; it's
+# any OpenAI-compatible server (ext-local). Base-URL precedence:
+#   LOCAL_BASE_URL   a full URL, used verbatim  (e.g. http://192.168.1.9:1234/v1)
+#   OLLAMA_HOST      a host only, + "/v1"        (back-compat for a plain Ollama)
+#   else             http://localhost:11434/v1   (local Ollama default)
+# LOCAL_API_KEY sets a real bearer token when a runner or reverse-proxy wants
+# one; the default "ollama" is a placeholder the SDK requires and local servers
+# ignore. Embeddings may live on a DIFFERENT endpoint than chat (a runner that
+# serves chat but not embeddings) — LOCAL_EMBED_BASE_URL / LOCAL_EMBED_API_KEY
+# override that side only, defaulting to the chat endpoint.
+
+
+def _local_base_url():
+    return os.getenv("LOCAL_BASE_URL") or (
+        os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/v1")
+
+
+def local_client_kwargs(embed=False):
+    """OpenAI-SDK kwargs pointing at the local server (chat or embeddings side)."""
+    base = (os.getenv("LOCAL_EMBED_BASE_URL") if embed else None) or _local_base_url()
+    key = ((os.getenv("LOCAL_EMBED_API_KEY") if embed else None)
+           or os.getenv("LOCAL_API_KEY") or "ollama")
+    return {"base_url": base, "api_key": key}
 
 # $ per 1M tokens (input, output) — same numbers as ../MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
@@ -111,24 +131,27 @@ class OpenAIProvider:
     """OpenAI chat completions, streamed. Needs OPENAI_API_KEY (via secrun)."""
 
     name = "openai"
-    # No base_url override / dummy key: talk to OpenAI proper. LocalProvider
-    # sets these to point the very same SDK at Ollama's OpenAI-compatible port.
-    _client_kwargs = {}
 
     def __init__(self, model=None):
         self.model = model or "gpt-4o-mini"
         self.usage = (0, 0)
+        self.max_tokens = MAX_TOKENS
+
+    def _client_kwargs(self):
+        # OpenAI proper: no base_url, real key from OPENAI_API_KEY. LocalProvider
+        # overrides this to point the very same SDK at a local server.
+        return {}
 
     def _client(self):
         from openai import OpenAI
 
-        return OpenAI(**self._client_kwargs)
+        return OpenAI(**self._client_kwargs())
 
     def complete(self, messages):
         stream = self._client().chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=MAX_TOKENS,
+            max_tokens=self.max_tokens,
             stream=True,
             # ask for a final usage chunk so the cost line is real, not guessed
             stream_options={"include_usage": True},
@@ -144,7 +167,7 @@ class OpenAIProvider:
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
         resp = self._client().chat.completions.create(
-            model=self.model, messages=messages, max_tokens=MAX_TOKENS, **kwargs
+            model=self.model, messages=messages, max_tokens=self.max_tokens, **kwargs
         )
         self.usage = (resp.usage.prompt_tokens, resp.usage.completion_tokens)
         msg = resp.choices[0].message
@@ -265,18 +288,28 @@ class LocalProvider(OpenAIProvider):
     usage accounting — and changes exactly one thing: where the SDK points.
     That is the local dive's whole thesis, so it's the whole implementation.
     The default chat model is overridable (LOCAL_MODEL / MODEL), because which
-    model you pulled is your choice; check `ollama list` for the exact tag.
+    model you loaded is your choice; check your runner's model list for the
+    exact id (Ollama: `ollama list`; LM Studio/vLLM: the `/v1/models` endpoint).
 
-    Tool-calling in `step()` works only if the pulled model supports it — many
+    Tool-calling in `step()` works only if the loaded model supports it — many
     small local models don't, so agent mode may degrade. Reported, not hidden.
     """
 
     name = "local"
-    _client_kwargs = {"base_url": LOCAL_BASE_URL, "api_key": "ollama"}
 
     def __init__(self, model=None):
         self.model = model or os.getenv("LOCAL_MODEL", "qwen3")
         self.usage = (0, 0)
+        # Thinking models (qwen3, deepseek-r1...) spend output tokens *reasoning*
+        # before the answer — a 1024 cap can be fully consumed by reasoning,
+        # leaving content empty (reasoning lands in a separate `reasoning_content`
+        # field this client ignores). So local gets a generous, overridable
+        # budget. Harmless for non-thinking models: it's a ceiling, they stop
+        # early. If a thinking model still returns blank, raise LOCAL_MAX_TOKENS.
+        self.max_tokens = int(os.getenv("LOCAL_MAX_TOKENS", "8192"))
+
+    def _client_kwargs(self):
+        return local_client_kwargs()
 
 
 PROVIDERS = {
@@ -316,7 +349,7 @@ def embed(texts, stack, input_type="document"):
     if stack in ("openai", "local"):
         from openai import OpenAI
 
-        client = OpenAI(**(LocalProvider._client_kwargs if stack == "local" else {}))
+        client = OpenAI(**(local_client_kwargs(embed=True) if stack == "local" else {}))
         resp = client.embeddings.create(model=EMBED_MODELS[stack], input=list(texts))
         # Ollama may omit usage; fall back to a token estimate so callers that
         # price/log it don't crash (local is free anyway).

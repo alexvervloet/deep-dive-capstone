@@ -171,5 +171,7 @@ def build_index(corpus_root, stack):
     with open(INDEX_PATH, "w", encoding="utf-8") as f:
         json.dump(index, f)
 
-    cost = total_tokens * EMBED_PRICES[embed_model] / 1_000_000
+    # .get(): any local embed model is free (it's your hardware), whatever it's
+    # named — so a runner-of-choice embed model never KeyErrors the price table.
+    cost = total_tokens * EMBED_PRICES.get(embed_model, 0.0) / 1_000_000
     return n_files, len(chunks), total_tokens, cost
