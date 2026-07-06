@@ -45,6 +45,8 @@ PROVIDER_DEPS = {
         ("anthropic", "anthropic", "Claude messages, streamed"),
         ("voyageai", "voyageai", "Voyage embeddings (the claude stack's index)"),
     ],
+    # local (ext-local) reuses the openai SDK, pointed at Ollama's port
+    "local": [("openai", "openai", "the SDK, pointed at Ollama's OpenAI endpoint")],
 }
 PROVIDER_KEYS = {
     "mock": [],
@@ -53,6 +55,7 @@ PROVIDER_KEYS = {
         ("ANTHROPIC_API_KEY", "sk-ant-", "sk-ant-your-key-here"),
         ("VOYAGE_API_KEY", "pa-", "pa-your-voyage-key-here"),
     ],
+    "local": [],  # no key — that's the point; Ollama runs on your machine
 }
 
 
@@ -124,7 +127,11 @@ def check_keys(env, provider):
     print("\nAPI key")
     keys = PROVIDER_KEYS.get(provider, [])
     if not keys:
-        ok("none needed — the mock never calls a model.")
+        reason = {
+            "mock": "the mock never calls a model.",
+            "local": "local models run on your machine, not a paid API.",
+        }.get(provider, "this provider needs no key.")
+        ok(f"none needed — {reason}")
         return True
     all_ok = True
     for name, prefix, placeholder in keys:
@@ -140,6 +147,51 @@ def check_keys(env, provider):
     return all_ok
 
 
+def check_local_server(env):
+    """For PROVIDER=local: is the OpenAI-compatible server reachable, and does it
+    serve the configured chat + embed models?
+
+    Works for any runner (Ollama, LM Studio, llama.cpp, vLLM...), on this box or
+    another — it probes the standard `/v1/models` endpoint they all expose.
+    Standard library only, so the no-install promise holds."""
+    print("\nLocal model server")
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    base = _get(env, "LOCAL_BASE_URL") or (
+        (_get(env, "OLLAMA_HOST") or "http://localhost:11434") + "/v1")
+    chat_model = _get(env, "LOCAL_MODEL") or _get(env, "MODEL") or "qwen3"
+    embed_model = _get(env, "LOCAL_EMBED_MODEL") or "nomic-embed-text"
+    api_key = _get(env, "LOCAL_API_KEY")
+
+    req = urllib.request.Request(f"{base}/models")
+    if api_key:
+        req.add_header("Authorization", f"Bearer {api_key}")
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            served = {m.get("id", "") for m in _json.load(resp).get("data", [])}
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        fail(f"can't reach a local model server at {base} ({e}).")
+        print("    Start your runner (Ollama / LM Studio / llama.cpp / vLLM). If")
+        print("    it's on another machine, bind it to 0.0.0.0 and set LOCAL_BASE_URL.")
+        return False
+    ok(f"reached the server at {base} ({len(served)} models served).")
+    all_ok = True
+    for kind, model in (("chat", chat_model), ("embeddings", embed_model)):
+        # exact id, or a forgiving substring match (runners vary on how they
+        # advertise a loaded model's id vs the name you pass as `model`)
+        if model in served or any(model in s or s in model for s in served if s):
+            ok(f"{kind} model '{model}' is served.")
+        else:
+            fail(f"{kind} model '{model}' isn't in the served list.")
+            print("    Load it in your runner, or check the exact id it advertises.")
+            all_ok = False
+    if not all_ok:
+        print("    (Both are needed: RAG embeds the corpus AND answers from it.)")
+    return all_ok
+
+
 def main():
     print(_c("Checking your setup for the deep-dive capstone...\n", "1"))
     env = _read_env_file()
@@ -150,13 +202,18 @@ def main():
         return 1
     deps = check_dependencies(provider)
     keys = check_keys(env, provider)
+    local = check_local_server(env) if provider == "local" else True
 
     print()
-    if py and deps and keys:
+    if py and deps and keys and local:
         print(_c("All set! 🎉", "1;32"))
         if provider == "mock":
             print('Start here:  python -m askrepo ask "hello"')
             print("(The mock is offline and free — no key needed.)")
+        elif provider == "local":
+            print('Start here:  python -m askrepo index ..   then   '
+                  'python -m askrepo ask "hello"')
+            print("(Local models run on your machine — no key, no secrun, no bill.)")
         else:
             print('Start here:  secrun python -m askrepo ask "hello"')
         return 0

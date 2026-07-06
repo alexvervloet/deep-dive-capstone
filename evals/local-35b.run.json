@@ -1,0 +1,950 @@
+{
+ "created": "2026-07-06T09:16:11",
+ "mode": "rag",
+ "provider": "local",
+ "model": "qwen3.6-35b-a3b",
+ "judge_provider": "openai",
+ "judge_model": "gpt-4o-mini",
+ "embed_model": "text-embedding-qwen3-embedding-0.6b",
+ "k": 5,
+ "blend": 0.7,
+ "corpus_manifest": [
+  {
+   "repo": ".",
+   "sha": "2f0f422cd6e540bc8aa1954402ed5d65f33ad25c"
+  },
+  {
+   "repo": "agent-harness-deep-dive",
+   "sha": "4bae0bd6f5be13c175a578647f94878e53d5f9fd"
+  },
+  {
+   "repo": "agents-deep-dive",
+   "sha": "b143758afa18e31b89670885f4a9d72ff46f5f45"
+  },
+  {
+   "repo": "ai-in-production-deep-dive",
+   "sha": "8c0ce177bbe6aa385ffb4374ce22a30d2262f6cd"
+  },
+  {
+   "repo": "claude-api-deep-dive",
+   "sha": "c240cb688aca9dfe462a38985ce8ae73695349f3"
+  },
+  {
+   "repo": "context-engineering-deep-dive",
+   "sha": "f37bac36bb5e9b1ec66bd6f98a0519869c2de8e7"
+  },
+  {
+   "repo": "evals-deep-dive",
+   "sha": "0d8ee9e4750b4adcccc3001ad8855c42e3ad83e2"
+  },
+  {
+   "repo": "fine-tuning-deep-dive",
+   "sha": "23c663ba448864aadc963ee17a2ba8fe4b96b16c"
+  },
+  {
+   "repo": "local-models-deep-dive",
+   "sha": "28e682f3cdc2013874e14e9c76539e8760e52226"
+  },
+  {
+   "repo": "mcp-deep-dive",
+   "sha": "813ec712aa67ceeb9bdc5798004a3d2b08677261"
+  },
+  {
+   "repo": "multimodal-deep-dive",
+   "sha": "a617ebb02a5ae1d7dfd88f4b04793590d0ed24fd"
+  },
+  {
+   "repo": "openai-api-deep-dive",
+   "sha": "6c00b04768e456247fb00dc7465bbc046f7c580d"
+  },
+  {
+   "repo": "prompt-engineering-deep-dive",
+   "sha": "be168f7f3ac46922fadd57f7954e92b7faa7026d"
+  },
+  {
+   "repo": "prompt-injection-deep-dive",
+   "sha": "a81c7db391536b84701d68e828f10741a8a94c76"
+  },
+  {
+   "repo": "rag-deep-dive",
+   "sha": "4ae9ebd5a4a1d54bf851c111f88ffbb405ea679f"
+  },
+  {
+   "repo": "realtime-voice-deep-dive",
+   "sha": "15d9a1dc2027f915aa6072006405ddfb94763194"
+  },
+  {
+   "repo": "deep-dive-capstone (tool)",
+   "sha": "05d97b0b61d2edcb5cbfefa57d9b82d9a691323d"
+  }
+ ],
+ "metrics": {
+  "hit_at_k": 0.829,
+  "citation_resolve": 1.0,
+  "citation_match": 0.512,
+  "judged_correctness": 0.786,
+  "decline_accuracy": 0.8,
+  "mean_cost_usd": 0.0,
+  "mean_latency_s": 36.69,
+  "n_questions": 40,
+  "citations_per_answer": 1.2,
+  "correctness_by_category": {
+   "code": 0.75,
+   "concept": 0.85,
+   "cross-dive": 0.5,
+   "locator": 0.875
+  },
+  "_note": "answers by qwen3.6-35b (remote LM Studio); judged by constant gpt-4o-mini"
+ },
+ "totals": {
+  "answer_cost_usd": 0.0,
+  "judge_cost_usd": 0.0
+ },
+ "questions": [
+  {
+   "id": "loc-01",
+   "category": "locator",
+   "retrieved": [
+    "realtime-voice-deep-dive/EXERCISES.md",
+    "GLOSSARY.md",
+    "CAPSTONE.md",
+    "README.md",
+    "CAPSTONE.md"
+   ],
+   "answer": "\n\nThe **Realtime Voice** deep dive covers barge-in (`README.md:52`). \n\nBarge-in is an interruption mechanism where the agent immediately stops speaking when it detects the user cutting in, discards the rest of its planned response, and treats the new speech as the next turn (`realtime-voice-deep-dive/EXERCISES.md:78-81`). This ensures the voice agent yields instantly to avoid \"finishing its sentence over you\" (`realtime-voice-deep-dive/EXERCISES.md:80-81`).",
+   "cost_usd": 0.0,
+   "latency_s": 33.35,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "Every key point is present, correctly stating that the Realtime Voice deep dive covers barge-in and explaining what barge-in is."
+  },
+  {
+   "id": "loc-02",
+   "category": "locator",
+   "retrieved": [
+    "agents-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md",
+    "agents-deep-dive/README.md",
+    "README.md",
+    "agent-harness-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe **Agents** deep dive (`agents-deep-dive`) is where you build an agent from scratch and write the agentic loop yourself (agents-deep-dive/README.md:3-5).",
+   "cost_usd": 0.0,
+   "latency_s": 32.03,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer contains all key points, clearly identifying the specific deep dive and describing the agent loop task."
+  },
+  {
+   "id": "loc-03",
+   "category": "locator",
+   "retrieved": [
+    "mcp-deep-dive/README.md",
+    "README.md",
+    "CAPSTONE.md",
+    "README.md",
+    "mcp-deep-dive/EXERCISES.md"
+   ],
+   "answer": "\n\nThe **MCP** deep dive covers the Model Context Protocol (README.md:54). Located in the `mcp-deep-dive/` directory, it provides a hands-on playground for learning how to hand an LLM tools, data, and prompts from a separate process using the protocol's three primitives\u2014tools, resources, and prompts\u2014as well as its JSON-RPC handshake, transports (stdio vs. HTTP), and security model (mcp-deep-dive/README.md:1-9).",
+   "cost_usd": 0.0,
+   "latency_s": 25.75,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 2
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer mentions the MCP deep dive but does not include the key point about writing the server once, allowing any client to use it."
+  },
+  {
+   "id": "loc-04",
+   "category": "locator",
+   "retrieved": [
+    "prompt-engineering-deep-dive/EXERCISES.md",
+    "CAPSTONE.md",
+    "CAREERS.md",
+    "prompt-injection-deep-dive/README.md",
+    "prompt-injection-deep-dive/examples/04_prompting_defenses.py"
+   ],
+   "answer": "\n\nThe **Prompt Injection & Guardrails** deep dive teaches how to defend against prompt injection and build guardrails (prompt-injection-deep-dive/README.md:1-4).",
+   "cost_usd": 0.0,
+   "latency_s": 22.35,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer contains all key points, clearly stating the specific deep dive related to defending against prompt injection."
+  },
+  {
+   "id": "loc-05",
+   "category": "locator",
+   "retrieved": [
+    "realtime-voice-deep-dive/voice/providers.py",
+    "fine-tuning-deep-dive/README.md",
+    "ai-in-production-deep-dive/README.md",
+    "context-engineering-deep-dive/README.md",
+    "CAPSTONE.md"
+   ],
+   "answer": "\n\nThe **Fine-tuning deep dive** explicitly states that it runs completely offline on a mock provider with no API key required (fine-tuning-deep-dive/README.md:9-10). Other dives in the repository also default to an offline `mock` provider that requires no keys or network access (ai-in-production-deep-dive/README.md:84-85; context-engineering-deep-dive/README.md:68-73).",
+   "cost_usd": 0.0,
+   "latency_s": 45.82,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "The candidate answer incorrectly identifies the Fine-tuning deep dive instead of the required Production dive."
+  },
+  {
+   "id": "loc-06",
+   "category": "locator",
+   "retrieved": [
+    "local-models-deep-dive/README.md",
+    "fine-tuning-deep-dive/README.md",
+    "MODELS.md",
+    "fine-tuning-deep-dive/examples/09_open_weights_lora.py",
+    "local-models-deep-dive/README.md"
+   ],
+   "answer": "\n\nYou should do the **Local Models deep dive**. It is explicitly described as a hands-on guide for running open-weight LLMs on your own machine (local-models-deep-dive/README.md:3-4), and other sections in the repo point to it for actually running open weights locally (fine-tuning-deep-dive/README.md:263).",
+   "cost_usd": 0.0,
+   "latency_s": 23.46,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer includes the key point about the Local Models deep dive and provides additional context."
+  },
+  {
+   "id": "loc-07",
+   "category": "locator",
+   "retrieved": [
+    "fine-tuning-deep-dive/README.md",
+    "fine-tuning-deep-dive/README.md",
+    "fine-tuning-deep-dive/finetune/mock_tuner.py",
+    "fine-tuning-deep-dive/README.md",
+    "fine-tuning-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe **Fine-tuning** deep dive teaches this approach (fine-tuning-deep-dive/README.md:3-4). It explicitly contrasts fine-tuning with RAG, noting that while RAG changes what a model knows, fine-tuning adjusts how the model responds by default\u2014such as format or tone\u2014by teaching it through input\u2192output examples (fine-tuning-deep-dive/README.md:28-31, 34-37).",
+   "cost_usd": 0.0,
+   "latency_s": 34.12,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer includes both key points: it mentions the Fine-tuning dive and explains how it relates to changing behavior rather than knowledge."
+  },
+  {
+   "id": "loc-08",
+   "category": "locator",
+   "retrieved": [
+    "agent-harness-deep-dive/README.md",
+    "CHOOSING.md",
+    "README.md",
+    "agents-deep-dive/README.md",
+    "CAREERS.md"
+   ],
+   "answer": "\n\nThe **Agent Harnesses** deep dive covers hooks, permission policies, sandboxing, and subagents (agent-harness-deep-dive/README.md:5; CHOOSING.md:103; README.md:49).",
+   "cost_usd": 0.0,
+   "latency_s": 33.59,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer correctly identifies the Agent Harnesses deep dive and lists all the key points."
+  },
+  {
+   "id": "loc-09",
+   "category": "locator",
+   "retrieved": [
+    "context-engineering-deep-dive/README.md",
+    "context-engineering-deep-dive/README.md",
+    "context-engineering-deep-dive/README.md",
+    "context-engineering-deep-dive/EXERCISES.md",
+    "context-engineering-deep-dive/examples/03_compaction.py"
+   ],
+   "answer": "\n\nThe **Context Engineering** deep dive covers these topics in Sections 4 (\"Compaction\") and 5 (\"Long-term memory\") (`context-engineering-deep-dive/README.md:115-131`). It also references the RAG dive for embeddings and the Evals dive for testing (`context-engineering-deep-dive/README.md:270, 280`).",
+   "cost_usd": 0.0,
+   "latency_s": 78.31,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer correctly identifies the Context Engineering deep dive as covering conversation memory and compaction."
+  },
+  {
+   "id": "loc-10",
+   "category": "locator",
+   "retrieved": [
+    "multimodal-deep-dive/README.md",
+    "multimodal-deep-dive/multimodal/__init__.py",
+    "multimodal-deep-dive/README.md",
+    "realtime-voice-deep-dive/README.md",
+    "README.md"
+   ],
+   "answer": "\n\nThe **Multimodal** deep dive covers this topic. It is explicitly described as a hands-on playground for learning how multimodal LLMs work by sending images and audio to a model from scratch (`multimodal-deep-dive/README.md:1-9`). The package's `__init__.py` also defines itself as a toolkit for \"putting images and audio into an LLM\" (`multimodal-deep-dive/multimodal/__init__.py:2`), and it is listed in the main repository README as a bonus dive focused on putting the right modality (images and audio) into the right slot (`README.md:51`).",
+   "cost_usd": 0.0,
+   "latency_s": 32.63,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points about the Multimodal deep dive being related to images and audio in prompts are present."
+  },
+  {
+   "id": "loc-11",
+   "category": "locator",
+   "retrieved": [
+    "evals-deep-dive/README.md",
+    "README.md",
+    "evals-deep-dive/README.md",
+    "evals-deep-dive/README.md",
+    "CHOOSING.md"
+   ],
+   "answer": "\n\nThe **Evals** deep dive covers this, summarized by its core principle: \"If you can't measure it, you can't improve it \u2014 so make your app's quality a number you can rerun\" (README.md:38) (evals-deep-dive/README.md:26-27).",
+   "cost_usd": 0.0,
+   "latency_s": 24.85,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 2
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly identifies the Evals deep dive and encapsulates its core principle, matching the key points."
+  },
+  {
+   "id": "loc-12",
+   "category": "locator",
+   "retrieved": [
+    "rag-deep-dive/README.md",
+    "CAREERS.md",
+    "CAPSTONE.md",
+    "GLOSSARY.md",
+    "local-models-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe **RAG (Retrieval-Augmented Generation)** deep dive teaches these concepts (`rag-deep-dive/README.md:3-8`). It provides a hands-on playground to build chunking, embeddings, vector stores, and retrieval from scratch without relying on external frameworks (`rag-deep-dive/README.md:7-8`).",
+   "cost_usd": 0.0,
+   "latency_s": 37.07,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly identifies the RAG deep dive and mentions chunking, embeddings, and vector search."
+  },
+  {
+   "id": "con-01",
+   "category": "concept",
+   "retrieved": [
+    "agents-deep-dive/EXERCISES.md",
+    "fine-tuning-deep-dive/finetune/providers.py",
+    "README.md",
+    "fine-tuning-deep-dive/EXERCISES.md",
+    "HOW-LLMS-WORK.md"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: The default is likely determined by the `base_model()` function in `fine-tuning-deep-dive/finetune/providers.py`, which selects a model based on the active provider or falls back to a mock model.)",
+   "cost_usd": 0.0,
+   "latency_s": 39.42,
+   "hit": false,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "The answer does not mention the default model 'gpt-4o-mini' or explain its benefits."
+  },
+  {
+   "id": "con-02",
+   "category": "concept",
+   "retrieved": [
+    "SECRETS.md",
+    "rag-deep-dive/README.md",
+    "agents-deep-dive/README.md",
+    "evals-deep-dive/README.md",
+    "multimodal-deep-dive/README.md"
+   ],
+   "answer": "\n\nYour API keys should be stored in your operating system\u2019s keychain and injected into a single command using the `secrun` wrapper (SECRETS.md:3-6). They explicitly must not go into `.env` files or any other files within the repositories (SECRETS.md:3; rag-deep-dive/README.md:49; agents-deep-dive/README.md:50; evals-deep-dive/README.md:49; multimodal-deep-dive/README.md:52).",
+   "cost_usd": 0.0,
+   "latency_s": 26.15,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points regarding the storage of API keys in the OS keychain and the prohibition against placing them in .env files are present."
+  },
+  {
+   "id": "con-03",
+   "category": "concept",
+   "retrieved": [
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/rag/chunking.py",
+    "rag-deep-dive/examples/02_chunking.py",
+    "rag-deep-dive/examples/13_chunking_strategies.py",
+    "rag-deep-dive/examples/13_chunking_strategies.py"
+   ],
+   "answer": "\n\nThe two knobs are **chunk size** and **overlap**. \n\n- **Chunk size**: If set too large, chunks become unfocused and waste context space; if set too small, a chunk may not contain enough information to answer a question on its own (rag-deep-dive/README.md:102-103).\n- **Overlap**: Sharing words at chunk boundaries ensures ideas split across a cut aren't lost, but it introduces a duplication cost (rag-deep-dive/rag/chunking.py:17-18).",
+   "cost_usd": 0.0,
+   "latency_s": 37.88,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 2
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present and correctly articulated."
+  },
+  {
+   "id": "con-04",
+   "category": "concept",
+   "retrieved": [
+    "rag-deep-dive/rag/store.py",
+    "rag-deep-dive/README.md",
+    "CAPSTONE.md",
+    "rag-deep-dive/examples/03_vector_store.py",
+    "rag-deep-dive/examples/03_vector_store.py"
+   ],
+   "answer": "\n\nAt heart, it's simply:\n1. A list of (text, vector) pairs\n2. A way to find the vectors closest in meaning to a query vector (rag-deep-dive/rag/store.py:5-8). \n\nPractically, this means storing each chunk with its embedding and metadata, then using a search function to score every stored vector by similarity and return the top-k matches (rag-deep-dive/rag/store.py:10-12; rag-deep-dive/README.md:118-121).",
+   "cost_usd": 0.0,
+   "latency_s": 42.03,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer includes both key points: a list of (text, vector) pairs and top-k search by cosine similarity."
+  },
+  {
+   "id": "con-05",
+   "category": "concept",
+   "retrieved": [
+    "claude-api-deep-dive/EXERCISES.md",
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/rag/providers.py",
+    "evals-deep-dive/README.md",
+    "MODELS.md"
+   ],
+   "answer": "\n\nThe Claude stack uses **Voyage AI** (specifically the `voyage-3.5` model) for embeddings (rag-deep-dive/README.md:63, rag/providers.py:29). It doesn't use Anthropic's own models because Anthropic has no first-party embeddings endpoint or model; it instead recommends Voyage AI as a separate provider that requires its own SDK and API key (claude-api-deep-dive/EXERCISES.md:215-217, MODELS.md:59-60).",
+   "cost_usd": 0.0,
+   "latency_s": 29.58,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present in the candidate answer."
+  },
+  {
+   "id": "con-06",
+   "category": "concept",
+   "retrieved": [
+    "rag-deep-dive/rag/keyword.py",
+    "rag-deep-dive/examples/06_keyword_search.py",
+    "rag-deep-dive/rag/keyword.py",
+    "rag-deep-dive/EXERCISES.md",
+    "rag-deep-dive/examples/06_keyword_search.py"
+   ],
+   "answer": "\n\nBM25 asks three questions about each query word:\n1. Does the chunk contain it, and how often? (term frequency)\n2. How rare is the word across the whole corpus? (inverse document frequency)\n3. Is the chunk short or long? (length normalization) (rag-deep-dive/rag/keyword.py:14-16)",
+   "cost_usd": 0.0,
+   "latency_s": 35.85,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present and clearly addressed."
+  },
+  {
+   "id": "con-07",
+   "category": "concept",
+   "retrieved": [
+    "README.md",
+    "GLOSSARY.md",
+    "evals-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md",
+    "realtime-voice-deep-dive/README.md"
+   ],
+   "answer": "\n\n1. OpenAI API (evals-deep-dive/README.md:429)\n2. Claude API (evals-deep-dive/README.md:430)\n3. Prompt Engineering (evals-deep-dive/README.md:431)\n4. RAG (evals-deep-dive/README.md:432)\n5. Evals (evals-deep-dive/README.md:433)\n6. Agents (evals-deep-dive/README.md:434)\n7. Prompt Injection & Guardrails (evals-deep-dive/README.md:435)\n8. Production (evals-deep-dive/README.md:436)",
+   "cost_usd": 0.0,
+   "latency_s": 43.63,
+   "hit": true,
+   "citations": {
+    "total": 8,
+    "resolve": 8,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present in the correct order."
+  },
+  {
+   "id": "con-08",
+   "category": "concept",
+   "retrieved": [
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/EXERCISES.md",
+    "rag-deep-dive/examples/07_hybrid_retrieval.py",
+    "AUTHORING-LESSONS.md",
+    "CAREERS.md"
+   ],
+   "answer": "\n\nThe series learned that hybrid retrieval is *not* strictly better than vector search. Combining rankers only helps when they disagree in useful ways; if one method is confidently wrong, a naive combination can actually drag good results down and perform worse than using vectors alone (rag-deep-dive/examples/07_hybrid_retrieval.py:11-14). This was demonstrated on a paraphrase query where the keyword scorer was misled, causing a 50/50 blend to rank the correct chunk eighth instead of first (rag-deep-dive/examples/07_hybrid_retrieval.py:16-19; AUTHORING-LESSONS.md:21-23).",
+   "cost_usd": 0.0,
+   "latency_s": 31.16,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly states that hybrid retrieval is not strictly better and that a 50/50 blend performed worse than vector-only on a paraphrase query."
+  },
+  {
+   "id": "con-09",
+   "category": "concept",
+   "retrieved": [
+    "SECRETS.md",
+    "prompt-engineering-deep-dive/EXERCISES.md",
+    "SECRETS.md",
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/README.md"
+   ],
+   "answer": "\n\nTo run a lesson script that requires an API key, prefix your command with `secrun` (e.g., `secrun python examples/01_foo.py`) (`SECRETS.md:122`). This wrapper injects the key into the process environment while keeping it out of your shell (`SECRETS.md:126-127`). Scripts that do not need an API key can be run directly with `python` (`SECRETS.md:123`, `SECRETS.md:192`).",
+   "cost_usd": 0.0,
+   "latency_s": 37.02,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer contains the correct command to run a script requiring an API key but does not mention that offline examples need no wrapper."
+  },
+  {
+   "id": "con-10",
+   "category": "concept",
+   "retrieved": [
+    "CAPSTONE.md",
+    "agent-harness-deep-dive/EXERCISES.md",
+    "local-models-deep-dive/EXERCISES.md",
+    "realtime-voice-deep-dive/EXERCISES.md",
+    "fine-tuning-deep-dive/EXERCISES.md"
+   ],
+   "answer": "\n\nYou should run `check_setup.py` first, which runs offline and for free by using a mock provider (CAPSTONE.md:40\u201342).",
+   "cost_usd": 0.0,
+   "latency_s": 21.19,
+   "hit": false,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer includes both the key points: the mention of `check_setup.py` and its functionality in checking the Python version, packages, and provider without making an API call."
+  },
+  {
+   "id": "code-01",
+   "category": "code",
+   "retrieved": [
+    "agent-harness-deep-dive/README.md",
+    "agent-harness-deep-dive/harness/policy.py",
+    "agent-harness-deep-dive/examples/04_permissions.py",
+    "agent-harness-deep-dive/EXERCISES.md",
+    "agent-harness-deep-dive/harness/policy.py"
+   ],
+   "answer": "\n\nThe harness permission policy returns three verdicts (agent-harness-deep-dive/harness/policy.py:10-14):\n- **allow**: Run the tool immediately with no questions asked, typically for read-only, cheap, or reversible actions (agent-harness-deep-dive/examples/04_permissions.py:9).\n- **ask**: Pause and request human approval before running it, usually for writes, spending resources, or sending data (agent-harness-deep-dive/harness/policy.py:13-14; agent-harness-deep-dive/examples/04_permissions.py:10).\n- **deny**: Never run the tool under any circumstances, as it is out of bounds for this agent (agent-harness-deep-dive/harness/policy.py:14-15; agent-harness-deep-dive/README.md:150).",
+   "cost_usd": 0.0,
+   "latency_s": 38.55,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present and accurately described."
+  },
+  {
+   "id": "code-02",
+   "category": "code",
+   "retrieved": [
+    "rag-deep-dive/rag/chunking.py",
+    "AUTHORING-LESSONS.md",
+    "rag-deep-dive/examples/13_chunking_strategies.py",
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/examples/13_chunking_strategies.py"
+   ],
+   "answer": "\n\nSplitting Markdown on headings outperforms fixed-size windows because arbitrary word-count cuts often glue the tail of one topic onto the head of another, causing accidental topic-mixing (rag-deep-dive/rag/chunking.py:74-76). Heading-based splitting respects the document's natural boundaries, ensuring each chunk covers exactly one topic (rag-deep-dive/rag/chunking.py:78; AUTHORING-LESSONS.md:85). It also preserves the heading as metadata, enabling precise filtering and citation (rag-deep-dive/rag/chunking.py:78; rag-deep-dive/examples/13_chunking_strategies.py:146). In practice, fixed windows have been shown to merge distinct sections like \"Importing\" and \"Exporting,\" which causes retrieval systems to return chunks that start on the wrong topic (rag-deep-dive/rag/chunking.py:80-84; AUTHORING-LESSONS.md:87-89). Heading splitting keeps these topics cleanly separated (rag-deep-dive/examples/13_chunking_strategies.py:146).",
+   "cost_usd": 0.0,
+   "latency_s": 49.55,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer includes all key points: it explains that each section is focused on one topic and that fixed-size windows can mix topics by gluing them together."
+  },
+  {
+   "id": "code-03",
+   "category": "code",
+   "retrieved": [
+    "rag-deep-dive/examples/01_embeddings_recap.py",
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/examples/01_embeddings_recap.py",
+    "rag-deep-dive/rag/store.py",
+    "rag-deep-dive/rag/store.py"
+   ],
+   "answer": "\n\nThe function returns `0.0` when either vector has a norm of zero (which occurs if the vector is all zeros) (rag-deep-dive/rag/store.py:34-35).",
+   "cost_usd": 0.0,
+   "latency_s": 23.68,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer correctly states that the function returns 0.0 when one vector has a norm of zero."
+  },
+  {
+   "id": "code-04",
+   "category": "code",
+   "retrieved": [
+    "rag-deep-dive/examples/07_hybrid_retrieval.py",
+    "rag-deep-dive/examples/06_keyword_search.py",
+    "rag-deep-dive/EXERCISES.md",
+    "rag-deep-dive/README.md",
+    "rag-deep-dive/examples/06_keyword_search.py"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: The parameter names and defaults are likely defined in `rag/keyword.py`, which the README references as containing the actual BM25 implementation code.)",
+   "cost_usd": 0.0,
+   "latency_s": 38.48,
+   "hit": false,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "Key points about the parameters k1 and b and their default values are missing."
+  },
+  {
+   "id": "code-05",
+   "category": "code",
+   "retrieved": [
+    "SECRETS.md",
+    "claude-api-deep-dive/README.md",
+    "openai-api-deep-dive/README.md",
+    "SECRETS.md",
+    "agent-harness-deep-dive/README.md"
+   ],
+   "answer": "\n\nWhen a required Keychain item is missing, `secrun` prints an error message to standard error specifying which item is missing and pointing the user to SECRETS.md (SECRETS.md:104), then immediately exits with status code 1 (SECRETS.md:105). It halts execution on the first missing key rather than continuing through the rest (SECRETS.md:114-116).",
+   "cost_usd": 0.0,
+   "latency_s": 47.56,
+   "hit": true,
+   "citations": {
+    "total": 3,
+    "resolve": 3,
+    "match": 3
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer mentions exiting with an error and provides details about specific messages, but it does not mention how to store the key using 'security add-generic-password'."
+  },
+  {
+   "id": "code-06",
+   "category": "code",
+   "retrieved": [
+    "rag-deep-dive/rag/providers.py",
+    "rag-deep-dive/README.md",
+    "openai-api-deep-dive/README.md",
+    "CAPSTONE.md",
+    "multimodal-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe `input_type` parameter is a string hint that defaults to `\"document\"` (for stored text) or can be set to `\"query\"` (for search queries) (`rag-deep-dive/rag/providers.py:107-113`). Only Voyage AI actually uses this hint to optimize retrieval; OpenAI ignores it (`rag-deep-dive/rag/providers.py:112-113`, `121-124`).",
+   "cost_usd": 0.0,
+   "latency_s": 42.56,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly explains the `input_type` values for stored text and searches, and identifies that Voyage uses it while OpenAI ignores it."
+  },
+  {
+   "id": "code-07",
+   "category": "code",
+   "retrieved": [
+    "agent-harness-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md",
+    "agents-deep-dive/README.md",
+    "GLOSSARY.md",
+    "README.md"
+   ],
+   "answer": "\n\nBased on the provided context, the agent loop stops when it produces a final answer (GLOSSARY.md:154\u2013155). The agents dive also covers step limits as a key concept for controlling how long the loop runs before halting (agents-deep-dive/README.md:5).",
+   "cost_usd": 0.0,
+   "latency_s": 40.57,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer mentions conditions for stopping the loop but does not explicitly state that it stops when the model responds with no tool calls."
+  },
+  {
+   "id": "code-08",
+   "category": "code",
+   "retrieved": [
+    "rag-deep-dive/rag/store.py",
+    "rag-deep-dive/README.md",
+    "GLOSSARY.md",
+    "rag-deep-dive/examples/03_vector_store.py",
+    "rag-deep-dive/README.md"
+   ],
+   "answer": "\n\nWhen you have millions of vectors, `store.py` says to switch to an approximate-nearest-neighbour index (FAISS, hnswlib) or a hosted vector database (pgvector, Pinecone, Weaviate) (`rag-deep-dive/rag/store.py:16-18`).",
+   "cost_usd": 0.0,
+   "latency_s": 24.1,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "All key points are present and accurately conveyed."
+  },
+  {
+   "id": "x-01",
+   "category": "cross-dive",
+   "retrieved": [
+    "CAPSTONE.md",
+    "README.md",
+    "evals-deep-dive/README.md",
+    "fine-tuning-deep-dive/README.md",
+    "evals-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe fine-tuning dive is designed to be taken after the Evals dive (`README.md:53`). Specifically, Section 7 of the fine-tuning dive borrows its \u201cwin-rate method\u201d from the Evals dive, though it remains completely code-independent (`fine-tuning-deep-dive/README.md:19`). They are also explicitly paired as a `cross-dive` evaluation category to test multi-chunk synthesis and understanding of how they connect (`CAPSTONE.md:214`).",
+   "cost_usd": 0.0,
+   "latency_s": 43.06,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer mentions the relationship between evals and fine-tuning but does not explicitly state that fine-tuning must be proven against a baseline."
+  },
+  {
+   "id": "x-02",
+   "category": "cross-dive",
+   "retrieved": [
+    "rag-deep-dive/README.md",
+    "README.md",
+    "fine-tuning-deep-dive/README.md",
+    "context-engineering-deep-dive/README.md",
+    "local-models-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe series explicitly states that **Context Engineering** and **Multimodal** pair with RAG (`README.md:50-51`).",
+   "cost_usd": 0.0,
+   "latency_s": 43.06,
+   "hit": true,
+   "citations": {
+    "total": 0,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "Every key point is present."
+  },
+  {
+   "id": "x-03",
+   "category": "cross-dive",
+   "retrieved": [
+    "mcp-deep-dive/README.md",
+    "local-models-deep-dive/README.md",
+    "CAREERS.md",
+    "fine-tuning-deep-dive/README.md",
+    "realtime-voice-deep-dive/README.md"
+   ],
+   "answer": "\n\nThe series\u2019 explicit goal is **hirability**: to get a pre-AI software engineer to the point where they\u2019d clear an AI Engineer bar (CAREERS.md:3-5). Structurally, all eight core dives share a house style of being provider-agnostic, built from scratch without frameworks, offline-first, and culminating in a real capstone (mcp-deep-dive/README.md:408-410), with the sequence designed so that \u201cthis sequence builds naturally\u201d (mcp-deep-dive/README.md:410).",
+   "cost_usd": 0.0,
+   "latency_s": 53.88,
+   "hit": false,
+   "citations": {
+    "total": 3,
+    "resolve": 3,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "The candidate answer does not include any of the key points required."
+  },
+  {
+   "id": "x-04",
+   "category": "cross-dive",
+   "retrieved": [
+    "prompt-injection-deep-dive/README.md",
+    "prompt-injection-deep-dive/guardrails/attacks.py",
+    "CAPSTONE.md",
+    "prompt-injection-deep-dive/README.md",
+    "prompt-injection-deep-dive/examples/02_direct_injection.py"
+   ],
+   "answer": "\n\nThe dive\u2019s core concept is learning prompt injection and its defenses by attacking a toy system, observing attacks succeed, and then building guardrails from scratch to measure their effectiveness (prompt-injection-deep-dive/README.md:3-8). It emphasizes that while naive direct injection is largely solved, the real vulnerability comes from instructions hidden in data, proving that a firm system prompt alone is not a security boundary (prompt-injection-deep-dive/examples/02_direct_injection.py:19-23).\n\nThe series strictly scopes all attacks as defensive testing. Every attack targets only its own toy support bot using a made-up passphrase that protects nothing, and it uses well-known patterns solely for security evaluation rather than novel exploits (prompt-injection-deep-dive/README.md:24-28; prompt-injection-deep-dive/guardrails/attacks.py:11-15). The material is explicitly not aimed at real systems and should only be used to harden applications you own or are authorized to test (prompt-injection-deep-dive/README.md:28).",
+   "cost_usd": 0.0,
+   "latency_s": 67.15,
+   "hit": false,
+   "citations": {
+    "total": 3,
+    "resolve": 3,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The candidate answer includes both key points about treating everything as untrusted and the strictly defensive nature of attacks targeting only a toy bot."
+  },
+  {
+   "id": "x-05",
+   "category": "cross-dive",
+   "retrieved": [
+    "local-models-deep-dive/README.md",
+    "prompt-injection-deep-dive/guardrails/attacks.py",
+    "MODELS.md",
+    "context-engineering-deep-dive/examples/03_compaction.py",
+    "context-engineering-deep-dive/examples/02_sliding_window.py"
+   ],
+   "answer": "\n\nYou can run the rest of the series locally for $0, which includes sibling dives into prompt engineering, RAG, agents, and evals (local-models-deep-dive/README.md:226-234). By simply changing environment variables to point to a local server instead of modifying code, you can run these examples entirely on your own machine at zero cost (local-models-deep-dive/README.md:235-244).",
+   "cost_usd": 0.0,
+   "latency_s": 33.42,
+   "hit": false,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "The candidate answer does not mention the Production dive on its offline mock, Local Models with Ollama, or the offline first sections of most repos."
+  },
+  {
+   "id": "neg-01",
+   "category": "negative",
+   "retrieved": [
+    "evals-deep-dive/examples/08_judge_bias.py",
+    "CAREERS.md",
+    "evals-deep-dive/examples/06_llm_judge.py",
+    "agents-deep-dive/examples/13_parallel_and_streaming.py",
+    "prompt-engineering-deep-dive/EXERCISES.md"
+   ],
+   "answer": "\n\nThe capital of France is Paris (evals-deep-dive/examples/06_llm_judge.py:5; evals-deep-dive/examples/08_judge_bias.py:41-42).",
+   "cost_usd": 0.0,
+   "latency_s": 29.11,
+   "declined": false
+  },
+  {
+   "id": "neg-02",
+   "category": "negative",
+   "retrieved": [
+    "fine-tuning-deep-dive/examples/01_when_to_finetune.py",
+    "context-engineering-deep-dive/context/providers.py",
+    "claude-api-deep-dive/snippets/buggy.py",
+    "openai-api-deep-dive/snippets/buggy.py",
+    "fine-tuning-deep-dive/finetune/providers.py"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: subjective preferences like pizza toppings are not covered in these technical code snippets about LLM fine-tuning and API usage.)",
+   "cost_usd": 0.0,
+   "latency_s": 23.34,
+   "declined": true
+  },
+  {
+   "id": "neg-03",
+   "category": "negative",
+   "retrieved": [
+    "agents-deep-dive/examples/13_parallel_and_streaming.py",
+    "claude-api-deep-dive/examples/10_tool_use.py",
+    "openai-api-deep-dive/examples/10_function_calling.py",
+    "evals-deep-dive/examples/10_agent_trajectory.py",
+    "local-models-deep-dive/examples/08_structured_and_tools.py"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: The provided code examples only contain fake weather data for Paris and Tokyo, so Amsterdam's forecast isn't covered here.)",
+   "cost_usd": 0.0,
+   "latency_s": 37.06,
+   "declined": true
+  },
+  {
+   "id": "neg-04",
+   "category": "negative",
+   "retrieved": [
+    "GLOSSARY.md",
+    "CAPSTONE.md",
+    "CAPSTONE.md",
+    "README.md",
+    "fine-tuning-deep-dive/README.md"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: It might be covered in a separate deployment or infrastructure deep dive that isn't included in the provided context.)",
+   "cost_usd": 0.0,
+   "latency_s": 30.0,
+   "declined": true
+  },
+  {
+   "id": "neg-05",
+   "category": "negative",
+   "retrieved": [
+    "prompt-injection-deep-dive/README.md",
+    "fine-tuning-deep-dive/examples/04_run_finetune.py",
+    "prompt-injection-deep-dive/guardrails/attacks.py",
+    "fine-tuning-deep-dive/finetune/providers.py",
+    "ai-in-production-deep-dive/examples/10_model_fallback.py"
+   ],
+   "answer": "\n\nNot in this corpus. (Guess: This information would likely be found in a financial guide or tax preparation documentation rather than these AI/LLM engineering examples.)",
+   "cost_usd": 0.0,
+   "latency_s": 35.18,
+   "declined": true
+  }
+ ]
+}

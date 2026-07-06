@@ -60,6 +60,7 @@ merged to `main` with `--no-ff` and tagged `ext-*` — unordered add-ons from
 | `ext-mcp` | MCP | **done** | `ask` + `search` as MCP tools — point Claude Code at this repo and the course answers questions about itself |
 | `ext-harness` | Agent Harnesses | **done** | permission policy + read-only sandbox + audit around agent mode's file tools — the structural fix for v06's residual |
 | `ext-context` | Context Engineering | **done** | `askrepo chat` — multi-turn grounded conversation that budgets the window across accumulating chunks and compacted turns |
+| `ext-local` | Local Models | **done** | Ollama backend for answers + embeddings — index a private repo without sending a byte out; the measured quality gap vs cloud |
 
 ### ext-mcp — the course as a tool server
 
@@ -171,6 +172,90 @@ v02 contract still governs every answer — tell it "remember X" and it may repl
 `Not in this corpus.` because that's not a corpus question, even as the
 statement is kept in the thread and recalled later. The memory is
 conversational context for follow-ups, not a general assistant's compliance.
+
+### ext-local — index a private repo without sending a byte out
+
+The pitch is a real use case: point askrepo at a codebase you can't upload to a
+provider. [`askrepo/providers.py`](askrepo/providers.py) gains a `LocalProvider`
+that reuses *every line* of the OpenAI provider — streaming, tool-calling, usage
+accounting — and changes exactly one thing: it points the SDK at Ollama's
+OpenAI-compatible port (`localhost:11434/v1`). `embed()` gets a matching `local`
+stack (`nomic-embed-text`), so both halves of RAG — the index and the answer —
+run on your hardware, no key, `$0`. [`check_setup.py`](check_setup.py) pings
+Ollama and checks both models are pulled;
+[`ASKREPO_INDEX`](askrepo/indexer.py) lets a local-embedded index live beside
+the cloud one instead of clobbering it.
+
+The whole point is the honest number, so the eval got one fix first: the LLM
+judge is **measurement infrastructure, not the system under test**, so it must
+stay constant across runs you compare. A new `JUDGE_PROVIDER`/`JUDGE_MODEL`
+override ([`run_evals.py`](evals/run_evals.py)) answers with local Qwen while
+keeping the *same* gpt-4o-mini judge the cloud baseline used — a fair A/B on the
+answerer alone, not two moving variables.
+
+**The measured gap** (`qwen3:8b` + `nomic-embed-text` vs the v04 `gpt-4o-mini`
+baseline, same 40 questions, same judge — full table in
+[`evals/comparison-local.md`](evals/comparison-local.md)):
+
+| metric | cloud | local | delta |
+|---|---|---|---|
+| judged correctness | 0.771 | **0.843** | **+0.072** |
+| retrieval hit@k | 0.886 | 0.886 | +0.000 |
+| citation resolve | 0.953 | 0.781 | −0.172 |
+| citation match | 0.721 | 0.500 | −0.221 |
+| mean cost / question | $0.000407 | **$0** | free |
+| mean latency | 2.7s | 12.2s | **+9.5s** |
+
+The naive expectation ("cheaper but worse") only half held, and reporting it
+straight is the lesson:
+
+- **Retrieval was free parity** — `nomic-embed-text` matched OpenAI's embeddings
+  on hit@k *exactly* (0.886). The embedding half of the gap is zero.
+- **Local answered *better*, not worse** — correctness 0.843 vs 0.771, most of
+  it on `code` (0.75 vs 0.56). Same judge graded both, so it isn't style bias.
+  (One run; judge noise ~±0.02, so the +0.072 is real, a +0.01 wouldn't be.)
+- **The real regression is citation *format*, not grounding** — resolve/match
+  dropped, but of the 14 answers that failed the strict `(path:line)` parse,
+  **11 actually cite real sources**, just grouped like `(a.md:4, b.md:51)`
+  instead of one-per-paren. Only 3 were truly ungrounded. The small model
+  grounds its claims but follows askrepo's exact citation grammar less strictly.
+- **Latency is the tax you pay** — ~4.5× slower and the GPU is pegged while it
+  runs. On a laptop that's the felt cost, not the (zero) dollar cost.
+
+Honest headline: on this corpus the local stack matches cloud retrieval and
+edges it on correctness for `$0` — the privacy win costs *speed* and *citation-
+format fidelity*, not accuracy. "A bigger local model would likely close the
+citation gap; measure it, don't assume it" — so we did (the 35B below), and the
+prediction was **wrong** in an instructive way: bigger didn't close the citation
+gap, and retrieval, not generation, turned out to be the weak link. Full
+three-way table in [`evals/comparison-local.md`](evals/comparison-local.md).
+
+**"Local" means any OpenAI-compatible server — including another machine.**
+Because `LocalProvider` only points the SDK at an endpoint, the backend isn't
+tied to Ollama: LM Studio, llama.cpp's `llama-server`, vLLM, LocalAI all speak
+the same `/v1`. Point askrepo at one with `LOCAL_BASE_URL` (a full URL, used
+verbatim), keep a real token in `LOCAL_API_KEY` if the server wants one, and
+split embeddings onto a different box with `LOCAL_EMBED_BASE_URL` if your runner
+serves chat but not embeddings. **Verified end to end against LM Studio on a
+separate machine** (`unsloth/qwen3.6-35b-a3b` + `text-embedding-qwen3-embedding-0.6b`
+at `192.168.1.106:1234`): remote embeddings built the index, remote retrieval
+and a remote answer came back with resolving `(path:line)` citations, `$0`.
+Two gotchas that path surfaced, both handled: bind the remote runner to
+`0.0.0.0` (not `localhost`) or nothing off-box can reach it; and **thinking
+models** (qwen3, deepseek-r1) spend the output budget *reasoning* before the
+answer — a small cap returns a blank `content`, so local defaults to an 8192-token
+budget (`LOCAL_MAX_TOKENS`). `python check_setup.py` probes the `/v1/models`
+endpoint to confirm reachability and that both models are served.
+
+That remote 35B then got the full golden-set eval, judged by the same constant
+`gpt-4o-mini` (`evals/local-35b.run.json`): correctness **0.786** — a tie with
+cloud (within judge noise), *not* the win its size suggests, while the smaller
+localhost `qwen3:8b` edged cloud at 0.843. Its retrieval hit@k slipped to 0.829
+(the only run that dropped), pinning the weak spot on the **0.6B embedder**, not
+the strong answerer — so on a local RAG stack, upgrade the embedding model
+before the generator. Every citation it emitted resolved (a perfect 1.000), and
+latency was the real tax: **36.7s/question** vs cloud's 2.7s, a big thinking
+model reasoning before each answer on one consumer GPU.
 
 ## What exists so far
 

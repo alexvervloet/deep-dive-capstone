@@ -26,6 +26,33 @@ on a machine with nothing installed. That's the v00 promise, kept.
 """
 
 import json
+import os
+
+# The local backend is "point the OpenAI SDK somewhere that speaks the same
+# wire format" — which every runner does (Ollama, LM Studio, llama.cpp, vLLM,
+# LocalAI...), on this box or another. So "local" isn't Ollama-specific; it's
+# any OpenAI-compatible server (ext-local). Base-URL precedence:
+#   LOCAL_BASE_URL   a full URL, used verbatim  (e.g. http://192.168.1.9:1234/v1)
+#   OLLAMA_HOST      a host only, + "/v1"        (back-compat for a plain Ollama)
+#   else             http://localhost:11434/v1   (local Ollama default)
+# LOCAL_API_KEY sets a real bearer token when a runner or reverse-proxy wants
+# one; the default "ollama" is a placeholder the SDK requires and local servers
+# ignore. Embeddings may live on a DIFFERENT endpoint than chat (a runner that
+# serves chat but not embeddings) — LOCAL_EMBED_BASE_URL / LOCAL_EMBED_API_KEY
+# override that side only, defaulting to the chat endpoint.
+
+
+def _local_base_url():
+    return os.getenv("LOCAL_BASE_URL") or (
+        os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/v1")
+
+
+def local_client_kwargs(embed=False):
+    """OpenAI-SDK kwargs pointing at the local server (chat or embeddings side)."""
+    base = (os.getenv("LOCAL_EMBED_BASE_URL") if embed else None) or _local_base_url()
+    key = ((os.getenv("LOCAL_EMBED_API_KEY") if embed else None)
+           or os.getenv("LOCAL_API_KEY") or "ollama")
+    return {"base_url": base, "api_key": key}
 
 # $ per 1M tokens (input, output) — same numbers as ../MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
@@ -36,14 +63,19 @@ PRICES = {
 
 # Embeddings have no output tokens — you pay input only ($ per 1M tokens).
 # Anthropic has no first-party embeddings model; the claude stack uses Voyage
-# (its own SDK and key), exactly as the RAG dive teaches.
+# (its own SDK and key). The local stack uses a small Ollama embedding model —
+# free, and the whole point of ext-local: index without sending a byte out.
 EMBED_MODELS = {
     "openai": "text-embedding-3-small",
     "claude": "voyage-3.5",
+    "local": os.getenv("LOCAL_EMBED_MODEL", "nomic-embed-text"),
 }
 EMBED_PRICES = {
     "text-embedding-3-small": 0.02,
     "voyage-3.5": 0.06,
+    # local embeddings cost $0 — it's your GPU, not a meter. Kept in the table
+    # so the eval's cost column reads a true zero, not "unknown price".
+    "nomic-embed-text": 0.0,
 }
 
 MAX_TOKENS = 1024  # single-question answers; revisit when chat arrives
@@ -103,15 +135,23 @@ class OpenAIProvider:
     def __init__(self, model=None):
         self.model = model or "gpt-4o-mini"
         self.usage = (0, 0)
+        self.max_tokens = MAX_TOKENS
 
-    def complete(self, messages):
+    def _client_kwargs(self):
+        # OpenAI proper: no base_url, real key from OPENAI_API_KEY. LocalProvider
+        # overrides this to point the very same SDK at a local server.
+        return {}
+
+    def _client(self):
         from openai import OpenAI
 
-        client = OpenAI()
-        stream = client.chat.completions.create(
+        return OpenAI(**self._client_kwargs())
+
+    def complete(self, messages):
+        stream = self._client().chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=MAX_TOKENS,
+            max_tokens=self.max_tokens,
             stream=True,
             # ask for a final usage chunk so the cost line is real, not guessed
             stream_options={"include_usage": True},
@@ -123,13 +163,11 @@ class OpenAIProvider:
                 self.usage = (chunk.usage.prompt_tokens, chunk.usage.completion_tokens)
 
     def step(self, messages, tools):
-        from openai import OpenAI
-
         kwargs = {}
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
-        resp = OpenAI().chat.completions.create(
-            model=self.model, messages=messages, max_tokens=MAX_TOKENS, **kwargs
+        resp = self._client().chat.completions.create(
+            model=self.model, messages=messages, max_tokens=self.max_tokens, **kwargs
         )
         self.usage = (resp.usage.prompt_tokens, resp.usage.completion_tokens)
         msg = resp.choices[0].message
@@ -243,10 +281,42 @@ class ClaudeProvider:
         ]
 
 
+class LocalProvider(OpenAIProvider):
+    """A local model via Ollama's OpenAI-compatible endpoint (ext-local).
+
+    Reuses every line of OpenAIProvider — streaming, tool-calling (`step`),
+    usage accounting — and changes exactly one thing: where the SDK points.
+    That is the local dive's whole thesis, so it's the whole implementation.
+    The default chat model is overridable (LOCAL_MODEL / MODEL), because which
+    model you loaded is your choice; check your runner's model list for the
+    exact id (Ollama: `ollama list`; LM Studio/vLLM: the `/v1/models` endpoint).
+
+    Tool-calling in `step()` works only if the loaded model supports it — many
+    small local models don't, so agent mode may degrade. Reported, not hidden.
+    """
+
+    name = "local"
+
+    def __init__(self, model=None):
+        self.model = model or os.getenv("LOCAL_MODEL", "qwen3")
+        self.usage = (0, 0)
+        # Thinking models (qwen3, deepseek-r1...) spend output tokens *reasoning*
+        # before the answer — a 1024 cap can be fully consumed by reasoning,
+        # leaving content empty (reasoning lands in a separate `reasoning_content`
+        # field this client ignores). So local gets a generous, overridable
+        # budget. Harmless for non-thinking models: it's a ceiling, they stop
+        # early. If a thinking model still returns blank, raise LOCAL_MAX_TOKENS.
+        self.max_tokens = int(os.getenv("LOCAL_MAX_TOKENS", "8192"))
+
+    def _client_kwargs(self):
+        return local_client_kwargs()
+
+
 PROVIDERS = {
     "mock": MockProvider,
     "openai": OpenAIProvider,
     "claude": ClaudeProvider,
+    "local": LocalProvider,
 }
 
 
@@ -256,32 +326,36 @@ def get_provider(name, model=None):
     if name in PROVIDERS:
         return PROVIDERS[name](model=model or None)
     raise SystemExit(
-        f"PROVIDER={name!r} is not recognized. Use mock, openai, or claude."
+        f"PROVIDER={name!r} is not recognized. Use mock, openai, claude, or local."
     )
 
 
 def embed(texts, stack, input_type="document"):
-    """Embed a batch of texts on the given stack ('openai' or 'claude').
+    """Embed a batch of texts on the given stack ('openai', 'claude', 'local').
 
     Returns (vectors, total_tokens). `input_type` is "document" for things
     you're storing, "query" for a search query — Voyage uses the hint to
-    optimize each side of retrieval; OpenAI ignores it.
+    optimize each side of retrieval; OpenAI and the local model ignore it.
 
     The stack is an explicit argument (not read from PROVIDER) because the
     query at ask-time MUST be embedded with the same model the index was
     built with — vectors from different models live in different spaces and
     comparing them is meaningless. retrieve.py reads the stack out of the
-    saved index and passes it here.
+    saved index and passes it here. (A local-built index therefore stays
+    local at query time too — no OpenAI/Voyage key involved.)
     """
     if not texts:
         return [], 0
-    if stack == "openai":
+    if stack in ("openai", "local"):
         from openai import OpenAI
 
-        resp = OpenAI().embeddings.create(
-            model=EMBED_MODELS["openai"], input=list(texts)
-        )
-        return [item.embedding for item in resp.data], resp.usage.total_tokens
+        client = OpenAI(**(local_client_kwargs(embed=True) if stack == "local" else {}))
+        resp = client.embeddings.create(model=EMBED_MODELS[stack], input=list(texts))
+        # Ollama may omit usage; fall back to a token estimate so callers that
+        # price/log it don't crash (local is free anyway).
+        used = getattr(resp, "usage", None)
+        total = used.total_tokens if used else sum(len(t) // 4 for t in texts)
+        return [item.embedding for item in resp.data], total
     if stack == "claude":
         import voyageai
 
@@ -291,14 +365,14 @@ def embed(texts, stack, input_type="document"):
         return result.embeddings, result.total_tokens
     raise SystemExit(
         f"No embedding stack for PROVIDER={stack!r} — the mock can't embed. "
-        "Set PROVIDER=openai or PROVIDER=claude to build an index."
+        "Set PROVIDER=openai, claude, or local to build an index."
     )
 
 
 def cost_usd(provider):
     """Real cost of the last call, or None if the model isn't in PRICES."""
-    if provider.name == "mock":
-        return 0.0
+    if provider.name in ("mock", "local"):
+        return 0.0  # mock never calls; local runs on your hardware, not a meter
     if provider.model not in PRICES:
         return None
     input_price, output_price = PRICES[provider.model]
