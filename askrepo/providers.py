@@ -357,7 +357,15 @@ def embed(texts, stack, input_type="document"):
         total = used.total_tokens if used else sum(len(t) // 4 for t in texts)
         return [item.embedding for item in resp.data], total
     if stack == "claude":
-        import voyageai
+        try:
+            import voyageai
+        except ModuleNotFoundError:
+            raise SystemExit(
+                "PROVIDER=claude embeds with Voyage, but the 'voyageai' package "
+                "isn't installed. Run `pip install voyageai` (it's in "
+                "requirements.txt) and set VOYAGE_API_KEY — `python check_setup.py` "
+                "checks both."
+            )
 
         result = voyageai.Client().embed(
             list(texts), model=EMBED_MODELS["claude"], input_type=input_type
