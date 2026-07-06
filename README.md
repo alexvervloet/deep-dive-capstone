@@ -10,6 +10,40 @@ The roadmap — every step, what it builds, and its definition of done — lives
 
 ---
 
+## See it work
+
+Ask the course about itself — a plain-English answer with `(path:line)` citations
+that resolve to real files, plus what was retrieved and what the call cost:
+
+```console
+$ askrepo ask "which dive covers barge-in, and what is it?"
+
+The dive that covers barge-in is the "realtime voice deep dive." Barge-in is the
+feature where a voice agent stops talking instantly when a user interrupts,
+discarding the rest of its planned audio and listening instead
+(CAPSTONE.md:201-202, realtime-voice-deep-dive/README.md:136-143).
+
+# stderr — the grounding is inspectable, not magic:
+retrieved: CAPSTONE.md:119-134 (score 0.94)
+retrieved: realtime-voice-deep-dive/README.md:130-146 (score 0.82)
+cost: $0.000322 (1868 in / 69 out)
+```
+
+Every answer is grounded in retrieved chunks and cites the lines it used; ask
+something outside the corpus and it declines rather than guessing. The entire
+offline path — CLI, provider plumbing, the test suite — runs with **no key and
+no network** on a built-in mock, so you can try it in one command for `$0`:
+
+```console
+$ python -m askrepo ask "hello"          # PROVIDER=mock — no key, no network
+[mock] No model was called and no key was needed — this canned answer proves the
+plumbing works: your question travelled CLI -> provider -> streamed answer.
+```
+
+> _Tip: replace this block with an animated terminal recording (`vhs` or
+> asciinema) for the strongest first impression — the commands above are the
+> exact script to capture._
+
 ## Quickstart
 
 The offline path always works — no key, no install:
