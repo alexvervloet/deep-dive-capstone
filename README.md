@@ -181,8 +181,11 @@ straight is the lesson:
 
 Honest headline: on this corpus the local stack matches cloud retrieval and
 edges it on correctness for `$0` — the privacy win costs *speed* and *citation-
-format fidelity*, not accuracy. A bigger local model would likely close the
-citation gap; the table says measure it, don't assume it.
+format fidelity*, not accuracy. "A bigger local model would likely close the
+citation gap; measure it, don't assume it" — so we did (the 35B below), and the
+prediction was **wrong** in an instructive way: bigger didn't close the citation
+gap, and retrieval, not generation, turned out to be the weak link. Full
+three-way table in [`evals/comparison-local.md`](evals/comparison-local.md).
 
 **"Local" means any OpenAI-compatible server — including another machine.**
 Because `LocalProvider` only points the SDK at an endpoint, the backend isn't
@@ -200,6 +203,16 @@ models** (qwen3, deepseek-r1) spend the output budget *reasoning* before the
 answer — a small cap returns a blank `content`, so local defaults to an 8192-token
 budget (`LOCAL_MAX_TOKENS`). `python check_setup.py` probes the `/v1/models`
 endpoint to confirm reachability and that both models are served.
+
+That remote 35B then got the full golden-set eval, judged by the same constant
+`gpt-4o-mini` (`evals/local-35b.run.json`): correctness **0.786** — a tie with
+cloud (within judge noise), *not* the win its size suggests, while the smaller
+localhost `qwen3:8b` edged cloud at 0.843. Its retrieval hit@k slipped to 0.829
+(the only run that dropped), pinning the weak spot on the **0.6B embedder**, not
+the strong answerer — so on a local RAG stack, upgrade the embedding model
+before the generator. Every citation it emitted resolved (a perfect 1.000), and
+latency was the real tax: **36.7s/question** vs cloud's 2.7s, a big thinking
+model reasoning before each answer on one consumer GPU.
 
 ## What exists so far
 
