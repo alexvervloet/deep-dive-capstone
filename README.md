@@ -15,6 +15,8 @@ The roadmap — every step, what it builds, and its definition of done — lives
 Ask the course about itself — a plain-English answer with `(path:line)` citations
 that resolve to real files, plus what was retrieved and what the call cost:
 
+![askrepo answering questions about the series — retrieval scores, a cited answer, and the real per-call cost](assets/demo.gif)
+
 ```console
 $ askrepo ask "which dive covers barge-in, and what is it?"
 

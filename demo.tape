@@ -3,8 +3,9 @@
 # Prereqs (run everything from the repo root):
 #   brew install vhs
 #   secrun env PROVIDER=openai .venv/bin/python -m askrepo index ..   # build the index once
-# Then:
-#   vhs demo.tape
+# Then — run vhs THROUGH secrun so your keychain API key flows into the recorded
+# commands via the environment (nothing secret is written to the tape or GIF):
+#   secrun vhs demo.tape
 #
 # Outputs:
 #   assets/demo.gif       — the animated README demo
@@ -19,8 +20,6 @@
 # to PROVIDER=claude in the alias below (the existing index still works — the
 # query is embedded with whatever stack the index was built with).
 
-Require secrun
-
 Output assets/demo.gif
 
 Set Shell zsh
@@ -31,9 +30,12 @@ Set Padding 26
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
 
-# --- hidden setup: make `askrepo` read as the clean command the README documents ---
+# --- hidden setup: clean alias, and clear the answer cache so every question
+#     runs fresh (real retrieval trace + real cost, not a $0 cache hit) ---
 Hide
-Type "alias askrepo='secrun env PROVIDER=openai .venv/bin/python -m askrepo'"
+Type "alias askrepo='env PROVIDER=openai .venv/bin/python -m askrepo'"
+Enter
+Type "rm -f index/answer_cache.json"
 Enter
 Type "clear"
 Enter
