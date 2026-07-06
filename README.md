@@ -59,6 +59,7 @@ merged to `main` with `--no-ff` and tagged `ext-*` — unordered add-ons from
 |-----|----------------|--------|--------------|
 | `ext-mcp` | MCP | **done** | `ask` + `search` as MCP tools — point Claude Code at this repo and the course answers questions about itself |
 | `ext-harness` | Agent Harnesses | **done** | permission policy + read-only sandbox + audit around agent mode's file tools — the structural fix for v06's residual |
+| `ext-context` | Context Engineering | **done** | `askrepo chat` — multi-turn grounded conversation that budgets the window across accumulating chunks and compacted turns |
 
 ### ext-mcp — the course as a tool server
 
@@ -128,6 +129,48 @@ find out. Honest limit: the harness stops tool *abuse* — reading what should
 never be read, running what was never allowed — but it cannot stop a plausible
 lie in a file the agent is *supposed* to read (v06's fact-poison, still the
 residual). No boundary on tools fixes that; reading the file was the job.
+
+### ext-context — the window is a contested resource
+
+`ask` answers one question in isolation. `chat` holds a conversation, and that
+turns the context window into a budget three things fight over every turn: the
+v02 contract plus a running summary, the retrieved chunks (now *accumulating*
+turn over turn), and the recent turns verbatim. `askrepo chat` budgets all
+three explicitly, splitting `--window` into a chunk slice and a conversation
+slice so the arithmetic is legible, not magic. Three small modules, lifted from
+[../context-engineering-deep-dive/context/](../context-engineering-deep-dive/context/):
+
+- [`tokens.py`](askrepo/tokens.py) — the ~4-chars/token estimate that lets you
+  reason about budgets with no tokenizer, no key.
+- [`memory.py`](askrepo/memory.py) — `ChatMemory`: the recent turns stay
+  verbatim, older ones **compact** into a running summary carried in the system
+  prompt. Bounded like a window, but old facts survive because they ride in the
+  summary. The summarizer is offline-deterministic by default and model-backed
+  when a real provider is set — so compaction is testable with no key.
+- [`assemble.py`](askrepo/assemble.py) — the askrepo-specific piece: a
+  `ChunkPool` carries retrieved chunks across turns, each aged by
+  `score × decay^(turns_since_seen)`, and `assemble()` keeps the highest-
+  priority chunks that fit the budget. **That decay is the survival policy** —
+  a chunk the user keeps circling stays hot; one mentioned once and abandoned
+  fades and is evicted the first turn the budget is tight. The chunk context
+  rides only on the *current* outgoing message, never persisted into the
+  thread, so compaction summarizes conversation, not file dumps.
+
+**Measured, live (gpt-4o-mini, `--window 900`, a deliberately tight budget):**
+across four turns the chunk budget held (~300–450 tok/turn) while **15 chunks
+were evicted** from the growing pool; on turn 4 compaction fired (the model
+summarizer folded the older turns, `turns sent` 6 → 3) — and the fact stated on
+turn 1 (*"I always index with k=8"*) **survived compaction into the summary and
+was recalled correctly** after its raw turn had been folded away. That is the
+whole thesis: bounded window, preserved facts. Watch it with `chat
+--show-context`; runs offline on the mock (conversation + compaction, no
+retrieval).
+
+Honest scope: this is grounded Q&A *with memory*, not a general chatbot. The
+v02 contract still governs every answer — tell it "remember X" and it may reply
+`Not in this corpus.` because that's not a corpus question, even as the
+statement is kept in the thread and recalled later. The memory is
+conversational context for follow-ups, not a general assistant's compliance.
 
 ## What exists so far
 
