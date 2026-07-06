@@ -40,9 +40,10 @@ $ python -m askrepo ask "hello"          # PROVIDER=mock — no key, no network
 plumbing works: your question travelled CLI -> provider -> streamed answer.
 ```
 
-> _Tip: replace this block with an animated terminal recording (`vhs` or
-> asciinema) for the strongest first impression — the commands above are the
-> exact script to capture._
+> _Tip: `brew install vhs && vhs demo.tape` regenerates this as an animated GIF
+> (`assets/demo.gif`) plus a 1280×640 still for the repo's social preview
+> (`assets/demo-card.png`) — running the real tool against the real index, so
+> every citation stays genuine._
 
 ## Quickstart
 
