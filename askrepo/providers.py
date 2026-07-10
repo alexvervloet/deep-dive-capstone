@@ -27,6 +27,7 @@ on a machine with nothing installed. That's the v00 promise, kept.
 
 import json
 import os
+from typing import Any
 
 # The local backend is "point the OpenAI SDK somewhere that speaks the same
 # wire format" — which every runner does (Ollama, LM Studio, llama.cpp, vLLM,
@@ -47,7 +48,7 @@ def _local_base_url():
         os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/v1")
 
 
-def local_client_kwargs(embed=False):
+def local_client_kwargs(embed=False) -> dict[str, Any]:
     """OpenAI-SDK kwargs pointing at the local server (chat or embeddings side)."""
     base = (os.getenv("LOCAL_EMBED_BASE_URL") if embed else None) or _local_base_url()
     key = ((os.getenv("LOCAL_EMBED_API_KEY") if embed else None)
@@ -106,7 +107,7 @@ class MockProvider:
     model = "canned-answer"
 
     def __init__(self):
-        self.usage = (0, 0)
+        self.usage: tuple[int, int] = (0, 0)
 
     def complete(self, messages):
         question = ""
@@ -134,7 +135,7 @@ class OpenAIProvider:
 
     def __init__(self, model=None):
         self.model = model or "gpt-4o-mini"
-        self.usage = (0, 0)
+        self.usage: tuple[int, int] = (0, 0)
         self.max_tokens = MAX_TOKENS
 
     def _client_kwargs(self):
@@ -214,7 +215,7 @@ class ClaudeProvider:
 
     def __init__(self, model=None):
         self.model = model or "claude-haiku-4-5"
-        self.usage = (0, 0)
+        self.usage: tuple[int, int] = (0, 0)
 
     def complete(self, messages):
         import anthropic
@@ -299,7 +300,7 @@ class LocalProvider(OpenAIProvider):
 
     def __init__(self, model=None):
         self.model = model or os.getenv("LOCAL_MODEL", "qwen3")
-        self.usage = (0, 0)
+        self.usage: tuple[int, int] = (0, 0)
         # Thinking models (qwen3, deepseek-r1...) spend output tokens *reasoning*
         # before the answer — a 1024 cap can be fully consumed by reasoning,
         # leaving content empty (reasoning lands in a separate `reasoning_content`
@@ -367,7 +368,7 @@ def embed(texts, stack, input_type="document"):
                 "checks both."
             )
 
-        result = voyageai.Client().embed(
+        result = voyageai.Client().embed(  # type: ignore[reportPrivateImportUsage]
             list(texts), model=EMBED_MODELS["claude"], input_type=input_type
         )
         return result.embeddings, result.total_tokens
