@@ -15,14 +15,16 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from typing import cast  # noqa: E402
+
 from askrepo import providers  # noqa: E402
-from askrepo.providers import cost_usd, embed, get_provider  # noqa: E402
+from askrepo.providers import LocalProvider, cost_usd, embed, get_provider  # noqa: E402
 
 
 class FakeOpenAI:
     """Records constructor kwargs; serves canned chat + embedding responses."""
 
-    last_kwargs = None
+    last_kwargs: dict = {}
 
     def __init__(self, **kwargs):
         FakeOpenAI.last_kwargs = kwargs
@@ -91,7 +93,7 @@ class TestLocalProvider(unittest.TestCase):
         self.assertEqual(FakeOpenAI.last_kwargs, {})  # no base_url, no dummy key
 
     def test_local_is_free(self):
-        p = get_provider("local")
+        p = cast(LocalProvider, get_provider("local"))
         p.usage = (1000, 1000)
         self.assertEqual(cost_usd(p), 0.0)
 
@@ -100,7 +102,7 @@ class TestLocalProvider(unittest.TestCase):
         # local's budget must exceed the cloud default (a 1024 cap can be fully
         # consumed by reasoning, leaving content empty)
         from askrepo.providers import MAX_TOKENS
-        self.assertGreater(get_provider("local").max_tokens, MAX_TOKENS)
+        self.assertGreater(cast(LocalProvider, get_provider("local")).max_tokens, MAX_TOKENS)
         with patch.dict(os.environ, {"LOCAL_MAX_TOKENS": "20000"}):
             self.assertEqual(providers.LocalProvider().max_tokens, 20000)
 
