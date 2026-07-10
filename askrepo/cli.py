@@ -156,7 +156,7 @@ def cmd_index(args):
 
 def cmd_redteam(args):
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "evals"))
-    import redteam
+    import redteam  # type: ignore[import-not-found]  # resolved via the sys.path insert above
 
     return redteam.run(args.freeze)
 
