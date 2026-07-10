@@ -32,6 +32,7 @@ on tools fixes that, because reading the file was the legitimate job.
 """
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from askrepo.indexer import INDEXED_EXTENSIONS
@@ -155,7 +156,7 @@ class Harness:
     policy: PermissionPolicy
     sandbox: ReadOnlySandbox
     audit: AuditLog = field(default_factory=AuditLog)
-    approver: object = None
+    approver: Callable[[str, dict], bool] | None = None
 
     def decide(self, tool, args):
         verdict = self.policy.decide(tool)
