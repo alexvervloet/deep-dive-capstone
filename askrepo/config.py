@@ -36,7 +36,8 @@ def load_config():
     config = dict(DEFAULTS)
     config.update(_read_env_file(os.path.join(HERE, ".env")))
     for key in config:
-        if os.getenv(key):
-            config[key] = os.getenv(key)
+        val = os.getenv(key)
+        if val:
+            config[key] = val
     config["PROVIDER"] = config["PROVIDER"].strip().lower()
     return config
