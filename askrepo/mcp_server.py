@@ -70,12 +70,13 @@ UNTRUSTED_BANNER = (
 )
 
 
-def _session():
+def _session() -> tuple[dict, Budget]:
     """Config and budget, created on first use so imports stay side-effect-free."""
     global _config, _budget
     if _config is None:
         _config = load_config()
         _budget = Budget(float(_config["BUDGET"]))
+    assert _budget is not None  # set in lockstep with _config just above
     return _config, _budget
 
 
