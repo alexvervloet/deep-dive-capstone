@@ -64,6 +64,7 @@ class TestMCPServer(unittest.TestCase):
     def test_ask_hardens_the_system_prompt(self):
         fake = FakeProvider("fine (x.md:1)", name="mock")  # mock name: no retrieval
         self.server.do_ask("q", provider=fake)
+        assert fake.seen_messages is not None  # do_ask above called complete()
         system = fake.seen_messages[0]
         self.assertEqual(system["role"], "system")
         self.assertIn("UNTRUSTED DATA", system["content"])  # v06 notice rode along
