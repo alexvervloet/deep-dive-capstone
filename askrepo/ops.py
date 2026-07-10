@@ -49,7 +49,7 @@ class ResponseCache:
     key, entries age out past the TTL.
     """
 
-    def __init__(self, path=CACHE_PATH, ttl_s=86400.0):
+    def __init__(self, path: str | None = CACHE_PATH, ttl_s=86400.0):
         self.path = path
         self.ttl_s = ttl_s
         self.hits = 0
@@ -154,7 +154,7 @@ def with_retry(fn, *, max_attempts=4, base_delay=0.5, sleep=time.sleep, on_retry
     tests run instantly. `on_retry(attempt, exc, delay)` hooks each retry into
     a trace.
     """
-    last = None
+    last: Exception | None = None
     for attempt in range(1, max_attempts + 1):
         try:
             return fn()
@@ -167,7 +167,8 @@ def with_retry(fn, *, max_attempts=4, base_delay=0.5, sleep=time.sleep, on_retry
             if on_retry:
                 on_retry(attempt, exc, delay)
             sleep(delay)
-    raise last  # unreachable, but explicit
+    assert last is not None  # unreachable: the loop only exits here after a retry set `last`
+    raise last
 
 
 # --- Observability: one structured line per request ------------------------
