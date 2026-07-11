@@ -22,4 +22,12 @@ for key in ANTHROPIC_API_KEY OPENAI_API_KEY VOYAGE_API_KEY; do
     export "$key=$value"
 done
 
+# Optional keys: injected when the Keychain item exists, skipped silently when
+# it doesn't (only some projects need them — e.g. LangSmith tracing).
+for key in LANGSMITH_API_KEY; do
+    if value=$(security find-generic-password -a "$USER" -s "deepdives:$key" -w 2>/dev/null); then
+        export "$key=$value"
+    fi
+done
+
 exec "$@"
