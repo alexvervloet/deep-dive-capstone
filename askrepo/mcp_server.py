@@ -1,8 +1,8 @@
 """Expose askrepo over MCP: ask + search as tools any host can call.
 
 The whole series inside one move: the RAG pipeline (v03) becomes a *tool
-server*, and some other agent — Claude Code, Claude Desktop, anything that
-speaks MCP — becomes the caller. Point Claude Code at this server and ask it
+server*, and some other agent (Claude Code, Claude Desktop, anything that
+speaks MCP) becomes the caller. Point Claude Code at this server and ask it
 questions about the series, and the meta loop closes: the course answers
 questions about the course, through the protocol one of its dives teaches.
 (Pattern: mcp-deep-dive/servers/; agents-deep-dive/agent/mcp_server.py shows
@@ -10,16 +10,16 @@ the same agent-to-MCP move built from scratch.)
 
 Two tools, two altitudes:
 
-  search(query)  retrieval only — the host's model does the reading. Returns
+  search(query)  retrieval only: the host's model does the reading. Returns
                  line-numbered context blocks, so the caller can cite
                  (path:line) exactly like the v02 contract asks.
-  ask(question)  the full pipeline — retrieve, ground, answer, cite. The
+  ask(question)  the full pipeline: retrieve, ground, answer, cite. The
                  host gets one finished answer instead of raw chunks.
 
 Two design decisions worth noticing:
 
   - **Guardrails are on, not optional.** A CLI answer goes to a human; an MCP
-    answer is injected into *another agent's context* — exactly the delivery
+    answer is injected into *another agent's context*: exactly the delivery
     channel v06 red-teamed. So `ask` hardens the system prompt and sanitizes
     the output (guardrails.py), and `search` labels its blocks as untrusted
     data: this server refuses to be the exfil hop it spent v06 learning about.
@@ -33,7 +33,7 @@ Run it the way a host would (stdio; stderr is for humans, stdout is protocol):
 
 `.mcp.json` in this repo does exactly that for Claude Code. The launcher
 matters: MCP hosts spawn servers without your shell, so the zsh `secrun`
-function (../SECRETS.md) isn't available there — secrun.sh is the same
+function (../SECRETS.md) isn't available there; secrun.sh is the same
 keychain injection as a script.
 
 SDK note: targets the official `mcp` Python SDK 1.x (`mcp.server.fastmcp`).
@@ -54,13 +54,13 @@ from askrepo.providers import cost_usd, get_provider
 mcp = FastMCP("askrepo")
 
 # One server process = one session: the budget meter and answer cache live for
-# its lifetime (the cache is disk-backed anyway — v07 — so hits survive
+# its lifetime (the cache is disk-backed anyway: v07, so hits survive
 # restarts too).
 _config = None
 _budget = None
 _cache = ResponseCache()
 
-# search() hands raw corpus text to the calling agent — the same untrusted-
+# search() hands raw corpus text to the calling agent: the same untrusted-
 # content channel v06 attacked through the agent's read_file tool. The server
 # can't harden the *host's* model, so it does the one thing it can: label the
 # data as data. (ask() gets the real defenses; this is a tripwire, not a wall.)
@@ -86,7 +86,7 @@ def _no_exit(fn, *args, **kwargs):
     Library code raises SystemExit for CLI-friendly messages ("No index
     found..."). In a server that would kill the process; MCP wants tool
     errors in-band (isError content), which FastMCP builds from ordinary
-    exceptions — so translate.
+    exceptions, so translate.
     """
     try:
         return fn(*args, **kwargs)
@@ -121,7 +121,7 @@ def do_ask(question, k=5, provider=None):
 
     # Namespaced apart from the CLI's cache entries on purpose: this path
     # hardens the prompt and sanitizes the output, so its answers are not
-    # interchangeable with the CLI's — a shared key could serve an
+    # interchangeable with the CLI's; a shared key could serve an
     # unsanitized answer here.
     key = cache_key(
         "mcp", provider.name, provider.model, CONTRACT_VERSION,
@@ -162,7 +162,7 @@ def do_ask(question, k=5, provider=None):
 
 # The docstrings below are not documentation garnish: FastMCP sends them to
 # the host as each tool's `description`, and the type hints become the input
-# schema. They are the calling model's ONLY clue for choosing a tool — the
+# schema. They are the calling model's ONLY clue for choosing a tool: the
 # same "a tool is a name, a description, and a schema" lesson as the agents
 # dive, so the ask/search division of labor has to live in this text.
 
@@ -184,7 +184,7 @@ def ask(question: str, k: int = 5) -> str:
     grounded in retrieved context, with (path:line) citations for every claim.
 
     Use this when you want a finished, cited answer instead of raw excerpts.
-    Answers only from the corpus — replies "Not in this corpus." when the
+    Answers only from the corpus; replies "Not in this corpus." when the
     answer isn't there. k controls how many chunks ground the answer (1-20,
     default 5)."""
     return do_ask(question, k)
@@ -192,5 +192,5 @@ def ask(question: str, k: int = 5) -> str:
 
 if __name__ == "__main__":
     # stdio transport: JSON-RPC on stdin/stdout, humans on stderr. Anything
-    # print()ed to stdout would corrupt the protocol channel — don't.
+    # print()ed to stdout would corrupt the protocol channel; don't.
     mcp.run()

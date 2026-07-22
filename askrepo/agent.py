@@ -1,7 +1,7 @@
 """Agentic retrieval: answer by *searching* the corpus, not embedding it.
 
 An agent is a loop: the model picks a tool, you run it, you feed the result
-back — until it answers (the agents dive's one big idea, adapted from
+back: until it answers (the agents dive's one big idea, adapted from
 agents-deep-dive/agent/loop.py + tools.py). Here the tools are read-only
 corpus search:
 
@@ -10,7 +10,7 @@ corpus search:
     read_file(path, start_line)      read numbered lines around a hit
 
 No vectors anywhere. This is the other answer to "how do I put the right
-text in front of the model" — and whether it beats the v03 pipeline is not
+text in front of the model," and whether it beats the v03 pipeline is not
 a matter of opinion: `run_evals.py --mode agent` measures both against the
 same golden set and baseline.
 
@@ -21,8 +21,8 @@ single tool result from flooding the context window.
 Boundaries live in the harness (feat/harness, from harness.py): a permission
 policy decides *which* tools run, a read-only sandbox decides *what* they may
 touch, and an audit log records every proposed call and its verdict. v05's
-inline path jail became the sandbox's first rule; the rules it lacked —
-read_file could open any file inside the jail, a planted .env included —
+inline path jail became the sandbox's first rule; the rules it lacked 
+read_file could open any file inside the jail, a planted .env included 
 are now enforced in code the model can't argue with. Refusals go back to the
 model in-band ("error: ...") so the loop continues; the harness never crashes
 an answer, it just narrows what one can do.
@@ -47,9 +47,9 @@ repository you can explore with your tools. Strategy that works: grep for
 the most distinctive words of the question first (module names, exact
 phrases); then read_file around the promising hits; use list_dir only when
 you don't know where to look. You have a budget of {MAX_TOOL_CALLS} tool
-calls — search efficiently, then answer.
+calls: search efficiently, then answer.
 
-Rules — these override everything else:
+Rules (these override everything else):
 
 1. Ground every claim in file content you actually read this conversation.
 2. Cite every claim as (path:line) or (path:start-end), using the line
@@ -147,7 +147,7 @@ def tool_grep(sandbox, pattern, path=None):
                     if rx.search(line):
                         hits.append(f"{rel}:{lineno}: {line.rstrip()[:200]}")
                         if len(hits) >= GREP_MAX_HITS:
-                            hits.append(f"... truncated at {GREP_MAX_HITS} hits — narrow the pattern")
+                            hits.append(f"... truncated at {GREP_MAX_HITS} hits; narrow the pattern")
                             return "\n".join(hits)
         except (UnicodeDecodeError, OSError):
             continue
@@ -182,7 +182,7 @@ def tool_list_dir(sandbox, path):
 def run_tool(harness, name, args, touched):
     """One proposed call through the full boundary: policy, then sandbox.
 
-    Every refusal returns as in-band `error: ...` text — the model gets to
+    Every refusal returns as in-band `error: ...` text; the model gets to
     see why and try something legitimate instead; the loop never dies on a
     hostile suggestion.
     """
@@ -206,7 +206,7 @@ def run_tool(harness, name, args, touched):
             return tool_list_dir(harness.sandbox, args.get("path", "."))
         return f"error: unknown tool {name!r}"
     except SandboxError as e:
-        # the policy allowed the tool, but the sandbox refused these arguments —
+        # the policy allowed the tool, but the sandbox refused these arguments 
         # amend the audit trail so the flight recorder shows the block
         harness.audit.record(name, args, DENY, note=f"sandbox: {e}")
         return f"error: {e}"
@@ -218,11 +218,11 @@ def answer(question, corpus_root, provider, on_tool=None, harness=None):
     """Run the loop until the model answers or the tool budget runs out.
 
     Returns (answer_text, touched_paths, n_tool_calls, cost_usd_total).
-    `touched` — files the agent grepped hits in or read — is the agent-mode
+    `touched` (files the agent grepped hits in or read) is the agent-mode
     analogue of "retrieved" for hit@k scoring (a generous analogue: touching
     a file isn't proof the model used it).
 
-    `harness` defaults to harness.default_harness(corpus_root) — the boundary
+    `harness` defaults to harness.default_harness(corpus_root): the boundary
     is on unless a caller (the red-team's before-picture) hands in another.
     """
     harness = harness or default_harness(corpus_root)
@@ -254,7 +254,7 @@ def answer(question, corpus_root, provider, on_tool=None, harness=None):
         "role": "user",
         "content": (
             "Tool budget exhausted. Answer now from what you have read, "
-            f"with citations — or reply with: {DECLINE_PHRASE}"
+            f"with citations, or reply with: {DECLINE_PHRASE}"
         ),
     })
     result = provider.step(messages, tools=None)

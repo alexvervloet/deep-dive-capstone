@@ -1,17 +1,17 @@
 """Hybrid retrieval over the saved index: vector search + BM25, blended.
 
-Vector search matches on *meaning*; BM25 matches on the actual *words* —
+Vector search matches on *meaning*; BM25 matches on the actual *words* 
 which is what you want for the things embeddings are worst at: module names,
 flags, error strings, `secrun`. (Both implementations are adapted from
 rag-deep-dive/rag/, where store.py and keyword.py teach them from scratch.)
 
 The blend weight is a knob, not a truth. The RAG dive's own hybrid example
 (ex07) found a 50/50 blend ranking the right chunk *worse* than vector-only
-on some queries — so BLEND is configurable here and *measured* at v04, not
+on some queries, so BLEND is configurable here and *measured* at v04, not
 asserted. Default 0.7 (vector-leaning) until the numbers say otherwise.
 
 One hard rule: the query is embedded with the model the index was built
-with — vectors from different models live in different spaces. The stack is
+with: vectors from different models live in different spaces. The stack is
 read out of the index, not out of PROVIDER, so you can chat with Claude over
 an OpenAI-embedded index without lying to the math.
 """
@@ -47,7 +47,7 @@ def cosine_similarity(a, b):
 
 def tokenize(text):
     """Lowercase word/number tokens, keeping hyphenated names like
-    "rag-deep-dive" whole — exact-match tokens are BM25's whole point."""
+    "rag-deep-dive" whole; exact-match tokens are BM25's whole point."""
     return re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)*", text.lower())
 
 
@@ -102,7 +102,7 @@ def retrieve(question, index, k=5, blend=0.7):
     Returns a list of (score, chunk) pairs, best first.
     """
     chunks = index["chunks"]
-    # embedding is one clean request — the ideal thing to retry on a blip
+    # embedding is one clean request: the ideal thing to retry on a blip
     from askrepo.ops import with_retry
 
     query_vector, _ = with_retry(

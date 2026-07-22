@@ -6,7 +6,7 @@ The contract every provider honors:
 
 where `messages` is the familiar [{"role": ..., "content": ...}, ...] list.
 After the stream is fully consumed, `provider.usage` holds the real
-(input_tokens, output_tokens) for the call — that's what the CLI prices.
+(input_tokens, output_tokens) for the call; that's what the CLI prices.
 
 v05 adds a second contract for the agent loop (see agent.py):
 
@@ -18,7 +18,7 @@ v05 adds a second contract for the agent loop (see agent.py):
                                       back, in this provider's wire shape
 
 The two APIs genuinely differ here (OpenAI: function-calling with role:"tool"
-messages; Claude: tool_use/tool_result content blocks) — the agents dive
+messages; Claude: tool_use/tool_result content blocks): the agents dive
 teaches both shapes, and these methods are where the difference is contained.
 
 The SDKs are imported lazily inside each provider so the mock keeps working
@@ -30,7 +30,7 @@ import os
 from typing import Any
 
 # The local backend is "point the OpenAI SDK somewhere that speaks the same
-# wire format" — which every runner does (Ollama, LM Studio, llama.cpp, vLLM,
+# wire format": which every runner does (Ollama, LM Studio, llama.cpp, vLLM,
 # LocalAI...), on this box or another. So "local" isn't Ollama-specific; it's
 # any OpenAI-compatible server (ext-local). Base-URL precedence:
 #   LOCAL_BASE_URL   a full URL, used verbatim  (e.g. http://192.168.1.9:1234/v1)
@@ -39,7 +39,7 @@ from typing import Any
 # LOCAL_API_KEY sets a real bearer token when a runner or reverse-proxy wants
 # one; the default "ollama" is a placeholder the SDK requires and local servers
 # ignore. Embeddings may live on a DIFFERENT endpoint than chat (a runner that
-# serves chat but not embeddings) — LOCAL_EMBED_BASE_URL / LOCAL_EMBED_API_KEY
+# serves chat but not embeddings): LOCAL_EMBED_BASE_URL / LOCAL_EMBED_API_KEY
 # override that side only, defaulting to the chat endpoint.
 
 
@@ -55,16 +55,16 @@ def local_client_kwargs(embed=False) -> dict[str, Any]:
            or os.getenv("LOCAL_API_KEY") or "ollama")
     return {"base_url": base, "api_key": key}
 
-# $ per 1M tokens (input, output) — same numbers as ../MODELS.md, so the cost
+# $ per 1M tokens (input, output): same numbers as ../MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
 PRICES = {
     "gpt-4o-mini": (0.15, 0.60),
     "claude-haiku-4-5": (1.00, 5.00),
 }
 
-# Embeddings have no output tokens — you pay input only ($ per 1M tokens).
+# Embeddings have no output tokens: you pay input only ($ per 1M tokens).
 # Anthropic has no first-party embeddings model; the claude stack uses Voyage
-# (its own SDK and key). The local stack uses a small Ollama embedding model —
+# (its own SDK and key). The local stack uses a small Ollama embedding model 
 # free, and the whole point of ext-local: index without sending a byte out.
 EMBED_MODELS = {
     "openai": "text-embedding-3-small",
@@ -74,7 +74,7 @@ EMBED_MODELS = {
 EMBED_PRICES = {
     "text-embedding-3-small": 0.02,
     "voyage-3.5": 0.06,
-    # local embeddings cost $0 — it's your GPU, not a meter. Kept in the table
+    # local embeddings cost $0: it's your GPU, not a meter. Kept in the table
     # so the eval's cost column reads a true zero, not "unknown price".
     "nomic-embed-text": 0.0,
 }
@@ -100,7 +100,7 @@ class MockProvider:
 
     The mock is honest about being a mock: its answer says no model ran, so a
     reader can't mistake plumbing for intelligence. (It also echoes the
-    question back — proof the text made the round trip.)
+    question back, proof the text made the round trip.)
     """
 
     name = "mock"
@@ -116,14 +116,14 @@ class MockProvider:
                 question = message["content"]
                 break
         answer = (
-            "[mock] No model was called and no key was needed — this canned "
+            "[mock] No model was called and no key was needed; this canned "
             "answer proves the plumbing works: your question "
             f"({question!r}) travelled CLI -> provider -> streamed answer.\n"
             "Set PROVIDER=openai or PROVIDER=claude to put a real model in "
             "this seat."
         )
         # Stream word by word so the CLI's streaming path is exercised for
-        # real — the real providers below yield chunks exactly like this.
+        # real: the real providers below yield chunks exactly like this.
         for i, word in enumerate(answer.split(" ")):
             yield word if i == 0 else " " + word
 
@@ -260,7 +260,7 @@ class ClaudeProvider:
                     for b in resp.content
                     if b.type == "tool_use"
                 ],
-                # echo the content blocks back verbatim on the next turn —
+                # echo the content blocks back verbatim on the next turn 
                 # the API requires the assistant turn to precede tool_results
                 "assistant": {"role": "assistant", "content": resp.content},
             }
@@ -285,14 +285,14 @@ class ClaudeProvider:
 class LocalProvider(OpenAIProvider):
     """A local model via Ollama's OpenAI-compatible endpoint (ext-local).
 
-    Reuses every line of OpenAIProvider — streaming, tool-calling (`step`),
-    usage accounting — and changes exactly one thing: where the SDK points.
+    Reuses every line of OpenAIProvider (streaming, tool-calling (`step`),
+    usage accounting) and changes exactly one thing: where the SDK points.
     That is the local dive's whole thesis, so it's the whole implementation.
     The default chat model is overridable (LOCAL_MODEL / MODEL), because which
     model you loaded is your choice; check your runner's model list for the
     exact id (Ollama: `ollama list`; LM Studio/vLLM: the `/v1/models` endpoint).
 
-    Tool-calling in `step()` works only if the loaded model supports it — many
+    Tool-calling in `step()` works only if the loaded model supports it; many
     small local models don't, so agent mode may degrade. Reported, not hidden.
     """
 
@@ -302,7 +302,7 @@ class LocalProvider(OpenAIProvider):
         self.model = model or os.getenv("LOCAL_MODEL", "qwen3")
         self.usage: tuple[int, int] = (0, 0)
         # Thinking models (qwen3, deepseek-r1...) spend output tokens *reasoning*
-        # before the answer — a 1024 cap can be fully consumed by reasoning,
+        # before the answer: a 1024 cap can be fully consumed by reasoning,
         # leaving content empty (reasoning lands in a separate `reasoning_content`
         # field this client ignores). So local gets a generous, overridable
         # budget. Harmless for non-thinking models: it's a ceiling, they stop
@@ -323,7 +323,7 @@ PROVIDERS = {
 
 def get_provider(name, model=None):
     if name == "mock":
-        return MockProvider()  # takes no model — it has no model to pick
+        return MockProvider()  # takes no model; it has no model to pick
     if name in PROVIDERS:
         return PROVIDERS[name](model=model or None)
     raise SystemExit(
@@ -335,15 +335,15 @@ def embed(texts, stack, input_type="document"):
     """Embed a batch of texts on the given stack ('openai', 'claude', 'local').
 
     Returns (vectors, total_tokens). `input_type` is "document" for things
-    you're storing, "query" for a search query — Voyage uses the hint to
+    you're storing, "query" for a search query; Voyage uses the hint to
     optimize each side of retrieval; OpenAI and the local model ignore it.
 
     The stack is an explicit argument (not read from PROVIDER) because the
     query at ask-time MUST be embedded with the same model the index was
-    built with — vectors from different models live in different spaces and
+    built with; vectors from different models live in different spaces and
     comparing them is meaningless. retrieve.py reads the stack out of the
     saved index and passes it here. (A local-built index therefore stays
-    local at query time too — no OpenAI/Voyage key involved.)
+    local at query time too; no OpenAI/Voyage key involved.)
     """
     if not texts:
         return [], 0
@@ -364,7 +364,7 @@ def embed(texts, stack, input_type="document"):
             raise SystemExit(
                 "PROVIDER=claude embeds with Voyage, but the 'voyageai' package "
                 "isn't installed. Run `pip install voyageai` (it's in "
-                "requirements.txt) and set VOYAGE_API_KEY — `python check_setup.py` "
+                "requirements.txt) and set VOYAGE_API_KEY; `python check_setup.py` "
                 "checks both."
             )
 
@@ -373,7 +373,7 @@ def embed(texts, stack, input_type="document"):
         )
         return result.embeddings, result.total_tokens
     raise SystemExit(
-        f"No embedding stack for PROVIDER={stack!r} — the mock can't embed. "
+        f"No embedding stack for PROVIDER={stack!r}; the mock can't embed. "
         "Set PROVIDER=openai, claude, or local to build an index."
     )
 

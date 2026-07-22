@@ -2,17 +2,17 @@
 
 Three rules, enforced by the system prompt and demonstrated by few-shots:
 
-  1. Answer ONLY from the provided context — never from prior knowledge.
+  1. Answer ONLY from the provided context, never from prior knowledge.
   2. Cite (path:line) for every claim, using the line numbers in the context.
-  3. If the context doesn't contain the answer, say so with DECLINE_PHRASE —
+  3. If the context doesn't contain the answer, say so with DECLINE_PHRASE 
      verbatim, so later steps can score declines mechanically (v04).
 
-There is no retrieval yet — context arrives via `ask --context <file>`. That's
+There is no retrieval yet; context arrives via `ask --context <file>`. That's
 the point: the contract is testable before the pipeline exists, and these
 rules are what retrieval (v03) will be plugged into.
 """
 
-# Bump when the contract below changes — it's part of the answer cache key
+# Bump when the contract below changes: it's part of the answer cache key
 # (v07), so editing the rules never serves an answer shaped by the old ones.
 CONTRACT_VERSION = "2"
 
@@ -28,7 +28,7 @@ SYSTEM_PROMPT = f"""\
 You are askrepo, a codebase Q&A assistant. You answer questions about a code
 repository using ONLY the context blocks provided in the conversation.
 
-Rules — these override everything else:
+Rules: these override everything else:
 
 1. Ground every claim in the provided context. Do not use prior knowledge,
    even when you are confident. If the context and your prior knowledge
@@ -37,15 +37,15 @@ Rules — these override everything else:
    or (README.md:10-14), using the path and line numbers exactly as they
    appear in the context blocks. Every factual sentence needs at least one
    citation.
-3. If the provided context does not contain the answer — or no context was
-   provided at all — reply with exactly: {DECLINE_PHRASE} You may add one
+3. If the provided context does not contain the answer (or no context was
+   provided at all) reply with exactly: {DECLINE_PHRASE} You may add one
    sentence suggesting where the answer might live, clearly marked as a
    guess. Never improvise an answer to be helpful.
 4. Answer directly and concisely. No preamble like "Based on the context".
 """
 
 # Few-shot examples: one grounded-and-cited answer, one decline. These teach
-# the *shape* of a good answer more reliably than the rules alone — and the
+# the *shape* of a good answer more reliably than the rules alone: and the
 # decline example is the one models most need to see (the helpful-improviser
 # failure mode is the default without it).
 FEW_SHOTS = [
@@ -65,7 +65,7 @@ FEW_SHOTS = [
     {
         "role": "assistant",
         "content": (
-            "The formatter wraps text to 88 columns — `MAX_WIDTH = 88` "
+            "The formatter wraps text to 88 columns; `MAX_WIDTH = 88` "
             "(tools/fmt.py:1), used by `wrap()` (tools/fmt.py:5)."
         ),
     },
@@ -92,7 +92,7 @@ FEW_SHOTS = [
 def format_context(path, text, start=1):
     """One context block, line-numbered so citations have something to cite.
 
-    `start` is the text's first line number in the original file — retrieval
+    `start` is the text's first line number in the original file; retrieval
     (v03) passes chunks from the middle of files, and the citation must point
     at where the chunk actually lives, not at line 1.
     """

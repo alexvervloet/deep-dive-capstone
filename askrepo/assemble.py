@@ -1,11 +1,11 @@
-"""Pack the window deliberately: which sections — and which retrieved chunks —
+"""Pack the window deliberately: which sections, and which retrieved chunks
 survive under a token budget.
 
 A single `ask` retrieves k chunks and sends them once. A `chat` is different:
 every turn retrieves *fresh* chunks, and they accumulate. Send them all and the
 window overflows within a few turns; keep only the newest and you forget the
 file the user asked about two turns ago and is still discussing. So chat needs
-a policy for **which retrieved chunks survive across turns** — the askrepo-
+a policy for **which retrieved chunks survive across turns**: the askrepo-
 specific problem this module exists for.
 
 Two pieces:
@@ -16,10 +16,10 @@ Two pieces:
   ChunkPool    the chat-specific carrier: retrieved chunks from every turn,
                deduped, each scored by *retrieval strength decayed by age*.
                Turn it into Sections and hand them to assemble(); what fits
-               survives, what doesn't is evicted — and the caller can *see*
+               survives, what doesn't is evicted, and the caller can *see*
                which, so context is never a black box (the v03 promise).
 
-Both are pure functions over data — no model, no key, testable offline.
+Both are pure functions over data: no model, no key, testable offline.
 Adapted from context-engineering-deep-dive/context/assemble.py.
 """
 
@@ -73,7 +73,7 @@ class ChunkPool:
 
     Each turn's retrieval is folded in with `add()`. A chunk seen in several
     turns keeps its best score and its most-recent sighting. `sections()` scores
-    every chunk as `score * decay**(turns_since_seen)` — a chunk the user keeps
+    every chunk as `score * decay**(turns_since_seen)`: a chunk the user keeps
     circling stays high; one mentioned once and abandoned fades and is evicted
     the first turn the budget is tight. That decay is the survival policy.
     """

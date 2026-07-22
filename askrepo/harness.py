@@ -1,7 +1,7 @@
 """The boundary around agent mode's tools: policy + sandbox + audit.
 
-v06's verdict was that the agent's file tools are the attack surface — the
-injection rides in on `read_file` — and its defenses were *advisory*: a
+v06's verdict was that the agent's file tools are the attack surface (the
+injection rides in on `read_file`) and its defenses were *advisory*: a
 system-prompt notice and an output check. The model can be talked out of
 advice; that's what task-aligned injection is. This module is the structural
 fix (adapted from agent-harness-deep-dive/harness/policy.py + sandbox.py):
@@ -10,22 +10,22 @@ proposes, the sandbox disposes.
 
 Three pieces, each tiny on purpose:
 
-  PermissionPolicy   which tools may run at all — declarative, deny-unlisted,
+  PermissionPolicy   which tools may run at all: declarative, deny-unlisted,
                      readable and diffable on its own (the same idea as
                      Claude Code's permission modes).
   ReadOnlySandbox    where file tools may look. v05 already jailed paths to
                      the corpus root; the harness lifts that inline check out
                      and closes what it missed: `read_file` would open ANY
-                     file inside the jail — a planted `.env`, a key file —
+                     file inside the jail: a planted `.env`, a key file
                      while grep only ever walked .md/.py. Now reads are
                      allowlisted by suffix and dotfiles are refused, jail or
-                     no jail. (There is deliberately no write method — this
+                     no jail. (There is deliberately no write method: this
                      sandbox can't be talked into becoming a weapon.)
   AuditLog           what actually happened: every proposed call, its
-                     verdict, and how it ended — the flight recorder the
+                     verdict, and how it ended: the flight recorder the
                      red-team table reads from.
 
-Honest scope: the harness stops tool *abuse* — reading what should never be
+Honest scope: the harness stops tool *abuse*: reading what should never be
 read, running what was never allowed. It cannot stop a plausible lie planted
 in a file the agent is *supposed* to read (v06's fact-poison); no boundary
 on tools fixes that, because reading the file was the legitimate job.
@@ -43,7 +43,7 @@ ASK = "ask"
 DENY = "deny"
 
 # What read_file may open: the indexed types plus harmless text configs.
-# An allowlist, not a blocklist — an attacker has infinite names for a secret
+# An allowlist, not a blocklist: an attacker has infinite names for a secret
 # file, but we can name the few suffixes a Q&A agent legitimately needs.
 READABLE_SUFFIXES = INDEXED_EXTENSIONS | {".txt", ".toml", ".json"}
 
@@ -56,7 +56,7 @@ class SandboxError(RuntimeError):
 class PermissionPolicy:
     """Per-tool verdicts plus a default for anything unlisted.
 
-    askrepo's default is DENY: a Q&A agent's tool list should be closed —
+    askrepo's default is DENY: a Q&A agent's tool list should be closed 
     a tool nobody granted is a tool that doesn't run. ASK exists for tools
     that need a human (none do today; see Harness.decide for how an ASK
     resolves when no approver is present).
@@ -85,7 +85,7 @@ class PermissionPolicy:
 
 
 class ReadOnlySandbox:
-    """A path jail plus read rules. Every check is on the *canonical* path —
+    """A path jail plus read rules. Every check is on the *canonical* path 
     realpath collapses `..` and follows symlinks, so the tricks a raw-string
     startswith would miss are the first thing caught."""
 
@@ -105,7 +105,7 @@ class ReadOnlySandbox:
     def read_text(self, path):
         """Read a file the rules permit: inside the jail, an allowlisted
         suffix, not a dotfile. The refusals name the rule, so the model (and
-        the audit log) can see *why* — a silent empty string would just make
+        the audit log) can see *why*; a silent empty string would just make
         it try harder."""
         real = self.resolve(path)
         rel = os.path.relpath(real, self.root)
@@ -119,7 +119,7 @@ class ReadOnlySandbox:
                 f"{path!r} is not a readable type "
                 f"({', '.join(sorted(self.readable_suffixes))}). Refused."
             )
-        # A missing file is an ordinary tool error, NOT a policy refusal —
+        # A missing file is an ordinary tool error, NOT a policy refusal 
         # raise a plain OSError so the audit log doesn't count a typo as a
         # security denial. SandboxError is reserved for "the rules said no."
         if not os.path.isfile(real):
@@ -149,7 +149,7 @@ class Harness:
     """The bundle agent.py consults on every call: policy, sandbox, audit.
 
     `approver(tool, args) -> bool` resolves ASK verdicts. Without one, ASK
-    means DENY — an unattended session must fail closed, not wave things
+    means DENY; an unattended session must fail closed, not wave things
     through because nobody was there to say no.
     """
 
@@ -179,7 +179,7 @@ def default_harness(corpus_root):
 
 def permissive_harness(corpus_root):
     """The v05 before-picture, kept runnable so the red-team can measure the
-    delta: any tool, any file — the jail is the only rule. This is not a
+    delta: any tool, any file; the jail is the only rule. This is not a
     mode you choose; it is the yardstick the default is compared against."""
     policy = PermissionPolicy(default=ALLOW)
     sandbox = ReadOnlySandbox(corpus_root, readable_suffixes=None,

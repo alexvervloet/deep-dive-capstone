@@ -4,19 +4,19 @@
 the window into a contested resource with three claimants every turn:
 
   1. the system contract (v02) + a running summary of compacted old turns
-  2. the retrieved chunks — but now *accumulating* across turns (assemble.py)
+  2. the retrieved chunks, but now *accumulating* across turns (assemble.py)
   3. the recent conversation turns, verbatim (memory.py)
 
 This module budgets all three explicitly and runs one turn. Two memories with
 two lifetimes do the work: a ChatMemory carries the conversation thread (clean
 question/answer text, compacted when it outgrows its slice), and a ChunkPool
 carries the evidence (retrieved chunks, aged so fresh relevance wins the budget
-fight). The chunk context is attached to the *current* outgoing message only —
-never persisted into the thread — so compaction never folds raw file text into
+fight). The chunk context is attached to the *current* outgoing message only 
+never persisted into the thread, so compaction never folds raw file text into
 a summary, and the conversation stays legible.
 
 Offline: on the mock provider there's no index, so a turn just converses (the
-compaction path still runs, on the deterministic summarizer) — the v00 promise,
+compaction path still runs, on the deterministic summarizer): the v00 promise,
 kept into the chat feature.
 """
 
@@ -30,7 +30,7 @@ from askrepo.providers import cost_usd
 
 
 def model_summarizer(provider):
-    """A summarizer backed by the chat provider — used when it isn't the mock.
+    """A summarizer backed by the chat provider, used when it isn't the mock.
 
     Compaction is itself a model call; framing it as "summarize these turns,
     preserve concrete facts and file references" keeps citations recoverable in
@@ -95,7 +95,7 @@ def respond(session, question, provider, *, on_context=None):
     """
     session.turn += 1
 
-    # 1. retrieval (skipped on the mock — no index, no key)
+    # 1. retrieval (skipped on the mock: no index, no key)
     context_text = ""
     if provider.name != "mock":
         session.pool.add(_retrieve(question, session), session.turn)
@@ -120,7 +120,7 @@ def respond(session, question, provider, *, on_context=None):
     answer = "".join(provider.complete(messages))
     cost = cost_usd(provider) or 0.0
 
-    # 4. persist the CLEAN turn (question/answer text only — never the chunk
+    # 4. persist the CLEAN turn (question/answer text only, never the chunk
     #    context), so compaction summarizes conversation, not file dumps
     session.memory.add("user", question)
     session.memory.add("assistant", answer)
@@ -128,7 +128,7 @@ def respond(session, question, provider, *, on_context=None):
 
 
 def context_line(session):
-    """One-line accounting of what this turn's window held — for --show-context."""
+    """One-line accounting of what this turn's window held, for --show-context."""
     mem = session.memory.info()
     kept = len(session.last_context.kept) if session.last_context else 0
     dropped = len(session.last_context.dropped) if session.last_context else 0

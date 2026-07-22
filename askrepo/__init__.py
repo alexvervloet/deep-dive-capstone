@@ -1,4 +1,4 @@
-"""askrepo — ask questions about a codebase, get answers with citations.
+"""askrepo: ask questions about a codebase, get answers with citations.
 
 The capstone of the AI Engineering deep-dive series: built step by step, one
 dive per tag. See ../CAPSTONE.md for the roadmap and this repo's README for

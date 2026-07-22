@@ -1,6 +1,6 @@
 """Conversation memory under a budget: keep recent turns, compact the rest.
 
-The API is stateless — "memory" is just the message list you choose to resend
+The API is stateless: "memory" is just the message list you choose to resend
 each turn. You can't resend everything forever, so memory is a *policy*: what
 to keep verbatim and what to fold away. askrepo chat uses compaction (the
 context dive's SummaryMemory): the most recent `keep_recent` turns stay word-
@@ -20,7 +20,7 @@ from askrepo import tokens
 def truncating_summarizer(messages, limit=400):
     """A deterministic, offline summary: the older turns, condensed by hand.
 
-    Not a smart summary — it keeps the leading text of each folded turn so a
+    Not a smart summary: it keeps the leading text of each folded turn so a
     fact stated early ("index with k=8") survives compaction without a model.
     The chat CLI replaces this with a model summarizer when one is available;
     this is what keeps compaction testable with no key."""
@@ -30,14 +30,14 @@ def truncating_summarizer(messages, limit=400):
         if content:
             lines.append(f"{m['role']}: {content}")
     joined = " | ".join(lines)
-    return joined if len(joined) <= limit else joined[: limit - 1] + "…"
+    return joined if len(joined) <= limit else joined[: limit - 1] + "..."
 
 
 class ChatMemory:
     """Turns plus a running summary, compacted when the turns exceed a budget.
 
     `add()` records a turn and may trigger compaction; `build()` returns
-    (summary, recent_turns) — the summary goes in the system prompt, the turns
+    (summary, recent_turns): the summary goes in the system prompt, the turns
     go in the message list. `budget_tokens` bounds the *turns* only; the chat
     CLI sizes it as the window minus the system prompt and the retrieved-chunk
     budget, so the three claimants on the window are budgeted explicitly.
@@ -64,7 +64,7 @@ class ChatMemory:
         return tokens.estimate(self.summary) + tokens.estimate_messages(self.turns)
 
     def _maybe_compact(self):
-        # keep peeling the oldest turns into the summary until the turns fit —
+        # keep peeling the oldest turns into the summary until the turns fit 
         # one summarize call can still leave us over budget, so loop
         while self._turn_tokens() > self.budget and len(self.turns) > self.keep_recent:
             old = self.turns[: -self.keep_recent]

@@ -3,9 +3,9 @@
 Two chunkers, both structure-aware and both line-tracking (adapted from
 rag-deep-dive/rag/chunking.py, which explains the tradeoffs):
 
-  - Markdown splits at headings — each section is about one thing, and the
+  - Markdown splits at headings: each section is about one thing, and the
     heading travels with the chunk.
-  - Python splits at top-level `def`/`class` boundaries — one object per
+  - Python splits at top-level `def`/`class` boundaries: one object per
     chunk, docstring included.
 
 Every chunk carries (path, start_line, end_line) so answers can cite
@@ -13,7 +13,7 @@ Every chunk carries (path, start_line, end_line) so answers can cite
 the whole reason these chunkers track lines instead of reusing the word-window
 splitter from the RAG dive.
 
-The saved index is one JSON file — human-readable on purpose, so you can peek
+The saved index is one JSON file, human-readable on purpose, so you can peek
 inside (the RAG dive's store.py makes the same call). Vectors are rounded to
 6 decimals to keep it a reasonable size; production systems use binary
 formats or a vector database, which changes the container, not the idea.
@@ -28,7 +28,7 @@ from askrepo.providers import EMBED_MODELS, EMBED_PRICES, embed
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ASKREPO_INDEX lets a local-embedded index live beside the cloud one instead
-# of overwriting it (ext-local) — so the eval comparison keeps both stacks'
+# of overwriting it (ext-local): so the eval comparison keeps both stacks'
 # indexes on disk at once:  ASKREPO_INDEX=index/index.local.json askrepo index ..
 INDEX_PATH = os.getenv("ASKREPO_INDEX") or os.path.join(HERE, "index", "index.json")
 
@@ -90,8 +90,8 @@ def chunk_markdown(path, text):
 def chunk_python(path, text):
     """One chunk per top-level def/class (decorators ride along), size-capped.
 
-    Everything before the first boundary — module docstring, imports,
-    constants — becomes the header chunk, which is often the most citable
+    Everything before the first boundary (module docstring, imports,
+    constants) becomes the header chunk, which is often the most citable
     part of a teaching file.
     """
     chunks = []
@@ -116,7 +116,7 @@ def collect_chunks(corpus_root):
     chunks = []
     n_files = 0
     def keep(dirpath, d):
-        # skip junk dirs — and the capstone itself, so the corpus is the
+        # skip junk dirs, and the capstone itself, so the corpus is the
         # series, not this tool (the self-indexing decision from CAPSTONE.md)
         if d in SKIP_DIRS:
             return False
@@ -172,6 +172,6 @@ def build_index(corpus_root, stack):
         json.dump(index, f)
 
     # .get(): any local embed model is free (it's your hardware), whatever it's
-    # named — so a runner-of-choice embed model never KeyErrors the price table.
+    # named, so a runner-of-choice embed model never KeyErrors the price table.
     cost = total_tokens * EMBED_PRICES.get(embed_model, 0.0) / 1_000_000
     return n_files, len(chunks), total_tokens, cost

@@ -1,17 +1,17 @@
 """The dozen lines around the model call: cache, budget, retries, logs.
 
 The model call is one line. Production is everything that makes it cheap,
-safe, observable, and reliable — adapted from ai-in-production-deep-dive/prod/
+safe, observable, and reliable, adapted from ai-in-production-deep-dive/prod/
 (cache.py, cost.py, reliability.py, observability.py).
 
 One adaptation the server-oriented dive doesn't need: the answer cache is
-**disk-backed**. askrepo is a CLI — one question per process — so an
+**disk-backed**. askrepo is a CLI (one question per process) so an
 in-memory cache would never hit across invocations. A local JSON file is the
 offline equivalent of the dive's "back it with Redis so it survives a
 restart": same get/set interface, persistent store.
 
-Everything here is pure standard library, so the whole ops layer — and its
-tests — run on the mock with no key. That's the v00 promise, kept to the end.
+Everything here is pure standard library, so the whole ops layer, and its
+tests: run on the mock with no key. That's the v00 promise, kept to the end.
 """
 
 import hashlib
@@ -33,8 +33,8 @@ CACHE_PATH = os.path.join(HERE, "index", "answer_cache.json")
 def cache_key(*parts):
     """A stable key over everything that shaped the answer.
 
-    Change any input — the question, the model, the prompt-contract version,
-    the retrieval mode/knobs — and the key changes, so a change never serves a
+    Change any input (the question, the model, the prompt-contract version,
+    the retrieval mode/knobs) and the key changes, so a change never serves a
     stale answer. (Same discipline as the RAG index cache: the embedding model
     was part of its key.)
     """
@@ -45,7 +45,7 @@ def cache_key(*parts):
 class ResponseCache:
     """A TTL cache of answers, persisted to a JSON file so CLI runs share it.
 
-    Real deployments use Redis; the interface is identical — get / set on a
+    Real deployments use Redis; the interface is identical: get / set on a
     key, entries age out past the TTL.
     """
 
@@ -98,7 +98,7 @@ class Budget:
     """A running spend ceiling for one session. `check()` before a call so the
     app refuses instead of spending; `record()` after, to advance the meter.
 
-    limit_usd <= 0 means unlimited (the default) — enforcement is opt-in.
+    limit_usd <= 0 means unlimited (the default); enforcement is opt-in.
     """
 
     def __init__(self, limit_usd=0.0):
@@ -130,7 +130,7 @@ class TransientError(RuntimeError):
 
 
 # Provider-SDK exceptions are matched by name so this module never imports the
-# SDKs (keeping the mock path dependency-free). A 400 is your bug — not retried.
+# SDKs (keeping the mock path dependency-free). A 400 is your bug: not retried.
 _TRANSIENT_NAMES = {
     "RateLimitError", "APITimeoutError", "APIConnectionError",
     "InternalServerError", "APIStatusError", "TransientError",

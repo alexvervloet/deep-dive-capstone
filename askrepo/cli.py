@@ -8,7 +8,7 @@ prompt contract on that path (grounded, cited, declined otherwise). v03 made
 the grounding automatic: `index` builds a hybrid-searchable index, and `ask`
 retrieves its own context. `--context <file>` still overrides retrieval for
 hand-fed grounding. Later steps hang new subcommands off this skeleton:
-`redteam` (v06), and `chat` (ext-context) — a multi-turn conversation that
+`redteam` (v06), and `chat` (ext-context): a multi-turn conversation that
 budgets the window across accumulating chunks and compacted turns. See
 ../CAPSTONE.md for the roadmap.
 """
@@ -87,12 +87,12 @@ def _produce(args, config, provider, trace):
     in_tok, out_tok = provider.usage
     if cost is None:
         print(f"tokens: {in_tok} in / {out_tok} out "
-              f"(no price on file for {provider.model} — see ../MODELS.md)",
+              f"(no price on file for {provider.model}; see ../MODELS.md)",
               file=sys.stderr)
         cost = 0.0
     else:
         # six decimals: a cheap real call is ~$0.00002; "$0.0000" would lie
-        # that it was free — only the mock prints a true zero
+        # that it was free; only the mock prints a true zero
         print(f"cost: ${cost:.6f} ({in_tok} in / {out_tok} out)", file=sys.stderr)
     trace.set(mode=args.mode, input_tokens=in_tok, output_tokens=out_tok,
               cost_usd=round(cost, 6))
@@ -164,7 +164,7 @@ def cmd_redteam(args):
 def cmd_chat(args):
     """Multi-turn grounded chat (ext-context): one session, one window budget.
 
-    The v07 session budget fits chat naturally — a conversation is exactly the
+    The v07 session budget fits chat naturally: a conversation is exactly the
     long-lived session it was built for. Each turn retrieves fresh chunks; the
     session decides which survive the window (askrepo/chat.py).
     """
@@ -180,7 +180,7 @@ def cmd_chat(args):
           f"(chunks {session.chunk_budget} / turns {session.memory.budget})",
           file=sys.stderr)
     if provider.name == "mock":
-        print("note: mock provider — no retrieval; conversation + compaction only.",
+        print("note: mock provider; no retrieval; conversation + compaction only.",
               file=sys.stderr)
 
     def one_turn(question):
@@ -207,7 +207,7 @@ def cmd_chat(args):
         return 0
 
     # interactive REPL
-    print("chat with the corpus — 'quit' to exit, '/context' to toggle the "
+    print("chat with the corpus. 'quit' to exit, '/context' to toggle the "
           "window view.", file=sys.stderr)
     while True:
         try:
@@ -248,7 +248,7 @@ def main(argv=None):
     ask.add_argument(
         "--raw",
         action="store_true",
-        help="bypass the prompt contract (no grounding, no citations) — the 'before' picture",
+        help="bypass the prompt contract (no grounding, no citations): the 'before' picture",
     )
     ask.add_argument(
         "--k",
@@ -265,7 +265,7 @@ def main(argv=None):
     ask.add_argument(
         "--no-cache",
         action="store_true",
-        help="skip the answer cache — always call the model (v07)",
+        help="skip the answer cache; always call the model (v07)",
     )
     ask.set_defaults(func=cmd_ask)
 

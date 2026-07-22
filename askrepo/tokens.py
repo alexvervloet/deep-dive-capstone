@@ -1,6 +1,6 @@
 """Token estimation: a budget you can do without a tokenizer.
 
-Context engineering starts with arithmetic — *will this fit?* Every model has
+Context engineering starts with arithmetic: *will this fit?* Every model has
 a context window, and a multi-turn chat that keeps resending its history plus
 freshly retrieved chunks is the thing that blows through it. Before deciding
 what to keep (memory.py) or which chunks survive (assemble.py), you need a
@@ -8,7 +8,7 @@ rough token count.
 
 We estimate at ~4 characters per token (English) plus a small per-message
 overhead for the chat format's role markers. It's an approximation on purpose:
-no key, no network, no tokenizer download — accurate enough to *reason about
+no key, no network, no tokenizer download; accurate enough to *reason about
 budgets*, which is all context assembly needs. For the real bill, trust the
 provider's `usage` field (v01 already prices from it); for deciding what goes
 in the window, this is enough. Adapted from

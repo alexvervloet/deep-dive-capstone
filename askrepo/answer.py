@@ -12,7 +12,7 @@ def prepare(question, k=5, blend=0.7):
     """Retrieve context for the question and build the contract messages.
 
     Returns (messages, sources) where sources is the retrieved
-    (score, chunk) list — the CLI shows it so retrieval is never a black box.
+    (score, chunk) list; the CLI shows it so retrieval is never a black box.
     """
     index = load_index()
     sources = retrieve(question, index, k=k, blend=blend)
