@@ -1,19 +1,19 @@
-# The mock provider needs NOTHING — `python -m askrepo ask "hello"` works
+# The mock provider needs NOTHING: `python -m askrepo ask "hello"` works
 # before any pip install. These are for the real providers (v01-chat).
 #
 # You only strictly need the one matching your PROVIDER (see .env). Both are
 # light, and installing both lets you switch stacks with one env-var change.
 
-# OpenAI — used when PROVIDER=openai (chat, streamed).
+# OpenAI: used when PROVIDER=openai (chat, streamed).
 openai>=1.30.0
 
-# Anthropic — used when PROVIDER=claude (messages, streamed).
+# Anthropic: used when PROVIDER=claude (messages, streamed).
 anthropic>=0.111.0
 
-# Voyage AI — embeddings for the claude stack (v03's index). Anthropic has no
+# Voyage AI: embeddings for the claude stack (v03's index). Anthropic has no
 # first-party embeddings model; see ../MODELS.md.
 voyageai>=0.3.0
 
-# Official MCP SDK — only for the MCP server (feat/mcp). Everything else,
+# Official MCP SDK: only for the MCP server (feat/mcp). Everything else,
 # including the whole test suite's logic, runs without it.
 mcp[cli]>=1.2.0
