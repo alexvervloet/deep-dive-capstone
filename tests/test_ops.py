@@ -1,4 +1,4 @@
-"""Tests for the ops layer — cache, budget, retry. All offline, no key."""
+"""Tests for the ops layer: cache, budget, retry. All offline, no key."""
 
 import os
 import sys
@@ -106,7 +106,7 @@ class TestRetry(unittest.TestCase):
 
         def bad_request():
             calls["n"] += 1
-            raise ValueError("your bug — don't retry")
+            raise ValueError("your bug; don't retry")
 
         with self.assertRaises(ValueError):
             with_retry(bad_request, sleep=lambda d: None)

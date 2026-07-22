@@ -1,6 +1,6 @@
 """Tests for chunking, prompt assembly, and the offline CLI path.
 
-These exercise real product code — the same functions v03/v02 answer with —
+These exercise real product code: the same functions v03/v02 answer with
 entirely on the mock. No embeddings, no key, no network.
 """
 

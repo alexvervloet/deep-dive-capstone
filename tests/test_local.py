@@ -1,9 +1,9 @@
-"""Tests for the local (Ollama) provider — offline, no server needed.
+"""Tests for the local (Ollama) provider: offline, no server needed.
 
 The local backend is "the OpenAI SDK pointed at localhost", so we test it by
 patching `openai.OpenAI` with a fake that records how it was constructed and
 what it was asked. That proves the wiring (base_url, dummy key, model, free
-cost, the shared streaming/embedding code) without a running Ollama — the
+cost, the shared streaming/embedding code) without a running Ollama; the
 same no-key discipline as every other tag's suite.
 """
 
@@ -71,7 +71,7 @@ class TestLocalProvider(unittest.TestCase):
         self.assertEqual(FakeOpenAI.last_kwargs.get("api_key"), "ollama")
 
     def test_local_base_url_override_used_verbatim(self):
-        # a full URL (LM Studio, vLLM, another machine) is used as-is — no /v1 tacked on
+        # a full URL (LM Studio, vLLM, another machine) is used as-is; no /v1 tacked on
         with patch("openai.OpenAI", FakeOpenAI), \
              patch.dict(os.environ, {"LOCAL_BASE_URL": "http://192.168.1.9:1234/v1",
                                      "LOCAL_API_KEY": "sk-secret"}):

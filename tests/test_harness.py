@@ -1,4 +1,4 @@
-"""Tests for the agent harness (feat/harness) — offline, no key, no network.
+"""Tests for the agent harness (feat/harness): offline, no key, no network.
 
 The harness is pure boundary logic, so it tests cleanly against a temp corpus
 and a FakeProvider that scripts tool calls. Two things matter: the sandbox

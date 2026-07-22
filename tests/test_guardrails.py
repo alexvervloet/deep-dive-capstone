@@ -1,4 +1,4 @@
-"""Tests for the injection guardrails — pure functions, offline."""
+"""Tests for the injection guardrails: pure functions, offline."""
 
 import os
 import sys
@@ -11,7 +11,7 @@ from askrepo import guardrails  # noqa: E402
 
 class TestExfilDetection(unittest.TestCase):
     def test_flags_markdown_image_to_any_domain(self):
-        # a Q&A answer never needs an embedded image — flag it regardless
+        # a Q&A answer never needs an embedded image; flag it regardless
         text = "See ![status](https://collect.attacker.example/ping.png) here."
         self.assertTrue(guardrails.find_exfil_links(text))
 

@@ -1,10 +1,10 @@
-"""Tests for the MCP server (feat/mcp) — no key, no network, no host.
+"""Tests for the MCP server (feat/mcp): no key, no network, no host.
 
 The server is a thin protocol skin over functions we can call directly:
 do_search and do_ask. A fake provider that streams a *poisoned* answer proves
 the guardrail wiring (v06) without a model; patched retrieval proves the
 search formatting without an index. Needs the `mcp` package installed (it's
-in requirements.txt) but never a key — FastMCP is imported, not spoken to.
+in requirements.txt) but never a key; FastMCP is imported, not spoken to.
 """
 
 import asyncio
