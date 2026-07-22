@@ -1,16 +1,15 @@
 """
-Setup check — run this first.
-=============================
+Setup check: run this first.
 
     python check_setup.py            # PROVIDER=mock needs nothing else
     secrun python check_setup.py     # so it can see your keychain-stored key
 
 Checks your Python version, your PROVIDER, the installed packages, and the
-API key that provider needs — and tells you exactly what to fix. Makes NO API
+API key that provider needs, and tells you exactly what to fix. Makes NO API
 calls. Uses only the standard library, so it runs even before `pip install`.
 
 PROVIDER=mock still passes on a fresh clone with no .env, no key, and no
-installed packages — the v00 promise holds at every tag.
+installed packages; the v00 promise holds at every tag.
 """
 
 import importlib.util
@@ -55,7 +54,7 @@ PROVIDER_KEYS = {
         ("ANTHROPIC_API_KEY", "sk-ant-", "sk-ant-your-key-here"),
         ("VOYAGE_API_KEY", "pa-", "pa-your-voyage-key-here"),
     ],
-    "local": [],  # no key — that's the point; Ollama runs on your machine
+    "local": [],  # no key; that's the point. Ollama runs on your machine
 }
 
 
@@ -84,7 +83,7 @@ def check_python():
     if (major, minor) >= (3, 10):
         ok(f"Python {major}.{minor} (3.10+ required)")
         return True
-    fail(f"Python {major}.{minor} — this repo needs Python 3.10 or newer.")
+    fail(f"Python {major}.{minor}: this repo needs Python 3.10 or newer.")
     print("    Install a newer Python from https://www.python.org/downloads/")
     return False
 
@@ -92,11 +91,11 @@ def check_python():
 def check_provider(env):
     print("\nProvider")
     if env is None:
-        warn("No .env file — using defaults (PROVIDER=mock).")
+        warn("No .env file; using defaults (PROVIDER=mock).")
         print("    To configure:  cp .env.example .env")
     provider = (_get(env, "PROVIDER") or "mock").strip().lower()
     if provider in PROVIDER_DEPS:
-        note = " (offline — no key, no cost)" if provider == "mock" else ""
+        note = " (offline, no key, no cost)" if provider == "mock" else ""
         ok(f"PROVIDER = {provider}{note}")
         return provider
     fail(f"PROVIDER = {provider!r} is not recognized.")
@@ -108,14 +107,14 @@ def check_dependencies(provider):
     print("\nDependencies")
     needed = PROVIDER_DEPS.get(provider, [])
     if not needed:
-        ok("none for the mock — it's pure standard library.")
+        ok("none for the mock; it's pure standard library.")
         return True
     missing = []
     for import_name, pip_name, purpose in needed:
         if importlib.util.find_spec(import_name) is not None:
-            ok(f"{pip_name} — {purpose}")
+            ok(f"{pip_name}: {purpose}")
         else:
-            fail(f"{pip_name} MISSING — {purpose}")
+            fail(f"{pip_name} MISSING: {purpose}")
             missing.append(pip_name)
     if missing:
         print("\n    Install everything with:")
@@ -131,14 +130,14 @@ def check_keys(env, provider):
             "mock": "the mock never calls a model.",
             "local": "local models run on your machine, not a paid API.",
         }.get(provider, "this provider needs no key.")
-        ok(f"none needed — {reason}")
+        ok(f"none needed: {reason}")
         return True
     all_ok = True
     for name, prefix, placeholder in keys:
         value = _get(env, name)
         if not value or value == placeholder:
             fail(f"{name} is not set.")
-            print("    Store it in your OS keychain and run `secrun python check_setup.py` — see ../SECRETS.md.")
+            print("    Store it in your OS keychain and run `secrun python check_setup.py`. See ../SECRETS.md.")
             all_ok = False
         elif not value.startswith(prefix):
             warn(f"{name} is set but doesn't start with '{prefix}'. Double-check it.")
@@ -152,7 +151,7 @@ def check_local_server(env):
     serve the configured chat + embed models?
 
     Works for any runner (Ollama, LM Studio, llama.cpp, vLLM...), on this box or
-    another — it probes the standard `/v1/models` endpoint they all expose.
+    another; it probes the standard `/v1/models` endpoint they all expose.
     Standard library only, so the no-install promise holds."""
     print("\nLocal model server")
     import json as _json
@@ -209,15 +208,15 @@ def main():
         print(_c("All set! 🎉", "1;32"))
         if provider == "mock":
             print('Start here:  python -m askrepo ask "hello"')
-            print("(The mock is offline and free — no key needed.)")
+            print("(The mock is offline and free; no key needed.)")
         elif provider == "local":
             print('Start here:  python -m askrepo index ..   then   '
                   'python -m askrepo ask "hello"')
-            print("(Local models run on your machine — no key, no secrun, no bill.)")
+            print("(Local models run on your machine; no key, no secrun, no bill.)")
         else:
             print('Start here:  secrun python -m askrepo ask "hello"')
         return 0
-    print(_c("Not ready yet — fix the ✗ items above, then run this again.", "1;31"))
+    print(_c("Not ready yet. Fix the ✗ items above, then run this again.", "1;31"))
     print("(PROVIDER=mock always works offline, no key needed.)")
     return 1
 
