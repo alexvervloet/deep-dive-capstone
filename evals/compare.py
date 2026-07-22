@@ -33,7 +33,7 @@ def main(rag_path, agent_path):
         agent = json.load(f)
     assert rag["mode"] == "rag" and agent["mode"] == "agent"
 
-    print("# RAG vs agentic retrieval — measured, not asserted\n")
+    print("# RAG vs agentic retrieval: measured, not asserted\n")
     print(f"Same golden set ({rag['metrics']['n_questions']} questions), same model "
           f"({rag['model']}), same corpus (see the manifests in the run files). "
           f"RAG: k={rag['k']}, blend={rag['blend']}, embed={rag['embed_model']}. "
@@ -50,9 +50,9 @@ def main(rag_path, agent_path):
     for cat in sorted(set(rag_cat) | set(agent_cat)):
         print(f"| {cat} | {rag_cat.get(cat, '—')} | {agent_cat.get(cat, '—')} |")
     print(
-        "\n\\* hit@k means different things per mode — RAG: an expected file "
+        "\n\\* hit@k means different things per mode. RAG: an expected file "
         "was among the k retrieved chunks; agent: the loop grepped a hit in "
-        "or read an expected file (a generous analogue — touching a file "
+        "or read an expected file (a generous analogue; touching a file "
         "isn't proof the model used it). Compare within a column, not across."
     )
     print(f"\nRuns: `{rag['created']}` (rag) · `{agent['created']}` (agent).")

@@ -14,15 +14,15 @@ evals-deep-dive/evals/):
   correctness         LLM judge scores the answer against keypoints (0/0.5/1)
   decline accuracy    negative questions: did it answer with DECLINE_PHRASE?
 
-plus cost and latency per question — quality numbers without cost numbers
+plus cost and latency per question; quality numbers without cost numbers
 are half a benchmark.
 
 Every run is stamped with a **corpus manifest** (the HEAD SHA of each corpus
 repo, plus this tool's own SHA). Separate histories mean a capstone tag can't
-pin the corpus state, so the run records what it was measured against — that
+pin the corpus state, so the run records what it was measured against; that
 is what makes baseline.run.json reproducible instead of nostalgic.
 
-Judge caveat (from the evals dive): the judge is a model grading a model —
+Judge caveat (from the evals dive): the judge is a model grading a model 
 spot-check its verdicts by hand before trusting trends. Each question's
 judge reason is saved in the run file for exactly that.
 """
@@ -136,7 +136,7 @@ def judge(question, keypoints, answer, provider):
 def run(args):
     config = load_config()
     if config["PROVIDER"] == "mock":
-        raise SystemExit("The mock can't be evaluated — set PROVIDER=openai or claude.")
+        raise SystemExit("The mock can't be evaluated; set PROVIDER=openai or claude.")
 
     index = load_index()
     corpus_root = index["corpus_root"]
@@ -145,21 +145,21 @@ def run(args):
 
     provider = get_provider(config["PROVIDER"], model=config["MODEL"])
     # The judge is measurement infrastructure, not the system under test, so it
-    # must stay CONSTANT across runs you compare — otherwise a correctness delta
+    # must stay CONSTANT across runs you compare; otherwise a correctness delta
     # could be the answerer *or* the grader moving. JUDGE_PROVIDER/JUDGE_MODEL
     # pin it (default: same as the answer provider, so existing baselines are
     # unchanged). For the ext-local run: answer with local, but JUDGE_PROVIDER=
-    # openai keeps the same gpt-4o-mini judge the cloud baseline used — a fair
+    # openai keeps the same gpt-4o-mini judge the cloud baseline used: a fair
     # A/B on the answerer alone. (Only the offline eval touches the cloud; the
-    # product path — index, retrieve, answer — stays fully local.)
+    # product path (index, retrieve, answer) stays fully local.)
     judge_provider = get_provider(
         os.getenv("JUDGE_PROVIDER") or config["PROVIDER"],
         model=os.getenv("JUDGE_MODEL") or config["MODEL"],
     )
     blend = float(config["BLEND"])
 
-    # A per-session spend ceiling (v07). The eval loop is a real session —
-    # 40 calls in one process — so a runaway or a too-low ceiling stops the
+    # A per-session spend ceiling (v07). The eval loop is a real session 
+    # 40 calls in one process, so a runaway or a too-low ceiling stops the
     # run instead of quietly running up the bill.
     budget = Budget(args.budget)
 
@@ -257,7 +257,7 @@ def run(args):
         with open(BASELINE_PATH, encoding="utf-8") as f:
             baseline = json.load(f)
         label = "baseline" if baseline["mode"] == args.mode else (
-            f"baseline (NOTE: different mode — baseline is {baseline['mode']!r})"
+            f"baseline (NOTE: different mode; baseline is {baseline['mode']!r})"
         )
         print(f"\nvs {label} "
               f"({baseline['created']}, {baseline['provider']}/{baseline['model']}):")
@@ -300,7 +300,7 @@ def aggregate(results):
         "n_questions": len(results),
         "citations_per_answer": round(total_cites / len(answerable), 1),
     }
-    # per-category correctness — where the pipeline is weak matters more
+    # per-category correctness: where the pipeline is weak matters more
     # than the overall average
     by_cat = {}
     for r in answerable:

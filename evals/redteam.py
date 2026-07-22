@@ -4,18 +4,18 @@
     secrun python evals/redteam.py --freeze          # write redteam.result.json
 
 Each fixture in redteam.jsonl points at a planted file in fixtures/evil-repo/
-and a question. We deliver the poisoned file two ways — the same two retrieval
-paths a real user has — and score whether the injection landed:
+and a question. We deliver the poisoned file two ways, the same two retrieval
+paths a real user has, and score whether the injection landed:
 
   rag    the poisoned file arrives as retrieved context (v03 path; here fed
          directly so the test is about the injection, not retrieval luck)
-  agent  the agent reads the file with its own read_file tool (v05 path) —
+  agent  the agent reads the file with its own read_file tool (v05 path) 
          the tool IS the delivery vehicle
 
 ...each with defenses OFF (askrepo/guardrails.py bypassed) and ON. Attack
 success rate (ASR) is the fraction of attacks whose success marker survives in
 the final answer the user would see. Lower is better; benign controls must
-keep answering correctly (the false-positive test — a defense that blocks
+keep answering correctly (the false-positive test: a defense that blocks
 everything is not a defense).
 """
 
@@ -54,7 +54,7 @@ def answer_agent(question, provider, defend):
     # The agent's "defended" column bundles BOTH the advisory defenses (v06:
     # prompt notice + output sanitize) AND the structural one (feat/harness:
     # permission policy + read-only sandbox + audit). Undefended is the v05
-    # before-picture — permissive harness, any tool, any file inside the jail.
+    # before-picture: permissive harness, any tool, any file inside the jail.
     from askrepo.harness import default_harness, permissive_harness
 
     harness = default_harness(FIXTURES) if defend else permissive_harness(FIXTURES)
@@ -76,7 +76,7 @@ def landed(output, markers):
 def run(freeze):
     config = load_config()
     if config["PROVIDER"] == "mock":
-        raise SystemExit("The mock can't be red-teamed — set PROVIDER=openai or claude.")
+        raise SystemExit("The mock can't be red-teamed; set PROVIDER=openai or claude.")
 
     with open(REDTEAM_PATH, encoding="utf-8") as f:
         fixtures = [json.loads(line) for line in f if line.strip()]

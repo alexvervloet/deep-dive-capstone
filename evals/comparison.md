@@ -1,4 +1,4 @@
-# RAG vs agentic retrieval — measured, not asserted
+# RAG vs agentic retrieval: measured, not asserted
 
 Same golden set (40 questions), same model (gpt-4o-mini), same corpus (see the manifests in the run files). RAG: k=5, blend=0.7, embed=text-embedding-3-small. Agent: grep/read_file/list_dir loop.
 
@@ -20,6 +20,6 @@ Same golden set (40 questions), same model (gpt-4o-mini), same corpus (see the m
 | cross-dive | 0.6 | 0.4 |
 | locator | 0.875 | 0.875 |
 
-\* hit@k means different things per mode — RAG: an expected file was among the k retrieved chunks; agent: the loop grepped a hit in or read an expected file (a generous analogue — touching a file isn't proof the model used it). Compare within a column, not across.
+\* hit@k means different things per mode. RAG: an expected file was among the k retrieved chunks; agent: the loop grepped a hit in or read an expected file (a generous analogue; touching a file isn't proof the model used it). Compare within a column, not across.
 
 Runs: `2026-07-03T21:33:59` (rag) · `2026-07-03T21:48:16` (agent).

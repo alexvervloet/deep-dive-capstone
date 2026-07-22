@@ -1,10 +1,10 @@
-# Prompt regression transcripts — v02-prompt
+# Prompt regression transcripts: v02-prompt
 
 Real before/after runs showing what the prompt contract
 ([askrepo/prompts.py](../askrepo/prompts.py)) changes. "Before" is the bare
 model (`--raw`); "after" is the contract. Every transcript below is a real
 run from 2026-07-03 (gpt-4o-mini / claude-haiku-4-5), reproducible with the
-commands shown. These become eval seeds at v04 — the categories are marked.
+commands shown. These become eval seeds at v04; the categories are marked.
 
 The one-line summary: **the bare model's failure mode isn't wrongness, it's
 confident helpfulness.** The contract converts "plausible essay" into either
@@ -12,7 +12,7 @@ a cited answer or an honest decline.
 
 ---
 
-## 1. Ungrounded question — before/after (v04 category: `negative`)
+## 1. Ungrounded question: before/after (v04 category: `negative`)
 
 **Ask:** `What chunk size should I use for RAG?` (no `--context`)
 
@@ -24,14 +24,14 @@ a cited answer or an honest decline.
 > guidelines to help you determine an appropriate chunk size:
 > 1. **Nature of the Data**: — For documents with dense information (like
 > technical manuals or research papers), smaller chunks (100-300 tokens) may
-> work better… *(continues for several paragraphs, zero sources)*
+> work better... *(continues for several paragraphs, zero sources)*
 
 **After** (contract):
 
 > Not in this corpus. (Guess: the acceptable chunk size for RAG might be
 > defined in the project's documentation or a related README file.)
 
-The before-answer isn't even wrong — that's what makes it dangerous. A user
+The before-answer isn't even wrong; that's what makes it dangerous. A user
 can't tell generic training-data advice from what *this repo* teaches
 (rag-deep-dive's ex05 has actual chunk-size measurements). The contract
 refuses to blur that line.
@@ -49,15 +49,15 @@ refuses to blur that line.
 Verified: MODELS.md line 40 is exactly the `gpt-4o-mini` row. The citation
 resolves.
 
-**After** (claude-haiku-4-5) — same command, `PROVIDER=claude`:
+**After** (claude-haiku-4-5), same command, `PROVIDER=claude`:
 
 > The series defaults to **`gpt-4o-mini`** for OpenAI and
 > **`claude-haiku-4-5`** for Anthropic/Claude. For `gpt-4o-mini`: it's
 > "Cheap, fast, multimodal — great for learning and most tasks"
 > (MODELS.md:40). For `claude-haiku-4-5`: the Claude dives default to it "for
-> cheap iteration" (MODELS.md:55). …
+> cheap iteration" (MODELS.md:55). ...
 
-Same contract, both providers — Haiku is wordier but every claim is cited.
+Same contract, both providers; Haiku is wordier but every claim is cited.
 (Note for v04's citation scorer: models may normalize `../MODELS.md` to
 `MODELS.md` in citations; the scorer should compare resolved paths.)
 
@@ -90,7 +90,7 @@ chunks, this rule is what turns a hallucination into a visible miss.
 > Not in this corpus. (Guess: the capital of France might be mentioned in a
 > geographical or cultural context document.)
 
-The model *knows* the answer and declines anyway — grounding beats prior
+The model *knows* the answer and declines anyway: grounding beats prior
 knowledge. This is the sharpest test of rule 1 and the seed for v04's
 off-topic questions.
 
@@ -106,5 +106,5 @@ secrun python -m askrepo ask "What chunk size should I use for RAG?"
 secrun python -m askrepo ask "What model does the series default to, and why?" --context ../MODELS.md
 ```
 
-Transcripts are snapshots, not assertions — models drift. v04 turns these
+Transcripts are snapshots, not assertions; models drift. v04 turns these
 into scored, rerunnable checks.
