@@ -50,10 +50,10 @@ class TestCache(unittest.TestCase):
         self.assertIsNone(cache.get("k"))
 
     def test_key_is_sensitive_to_every_part(self):
-        base = cache_key("openai", "gpt-4o-mini", "2", "rag", 5, "0.7", False, (), "q")
-        changed = cache_key("openai", "gpt-4o-mini", "2", "rag", 5, "0.7", False, (), "q2")
+        base = cache_key("openai", "gpt-5.4-nano", "2", "rag", 5, "0.7", False, (), "q")
+        changed = cache_key("openai", "gpt-5.4-nano", "2", "rag", 5, "0.7", False, (), "q2")
         model = cache_key("openai", "gpt-4o", "2", "rag", 5, "0.7", False, (), "q")
-        contract = cache_key("openai", "gpt-4o-mini", "3", "rag", 5, "0.7", False, (), "q")
+        contract = cache_key("openai", "gpt-5.4-nano", "3", "rag", 5, "0.7", False, (), "q")
         self.assertEqual(len({base, changed, model, contract}), 4)
 
 

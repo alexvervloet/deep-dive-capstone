@@ -58,7 +58,7 @@ def local_client_kwargs(embed=False) -> dict[str, Any]:
 # $ per 1M tokens (input, output): same numbers as ../MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
 PRICES = {
-    "gpt-4o-mini": (0.15, 0.60),
+    "gpt-5.4-nano": (0.20, 1.25),
     "claude-haiku-4-5": (1.00, 5.00),
 }
 
@@ -134,7 +134,7 @@ class OpenAIProvider:
     name = "openai"
 
     def __init__(self, model=None):
-        self.model = model or "gpt-4o-mini"
+        self.model = model or "gpt-5.4-nano"
         self.usage: tuple[int, int] = (0, 0)
         self.max_tokens = MAX_TOKENS
 
@@ -152,7 +152,7 @@ class OpenAIProvider:
         stream = self._client().chat.completions.create(
             model=self.model,
             messages=messages,
-            max_tokens=self.max_tokens,
+            max_completion_tokens=self.max_tokens,
             stream=True,
             # ask for a final usage chunk so the cost line is real, not guessed
             stream_options={"include_usage": True},
@@ -168,7 +168,7 @@ class OpenAIProvider:
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
         resp = self._client().chat.completions.create(
-            model=self.model, messages=messages, max_tokens=self.max_tokens, **kwargs
+            model=self.model, messages=messages, max_completion_tokens=self.max_tokens, **kwargs
         )
         self.usage = (resp.usage.prompt_tokens, resp.usage.completion_tokens)
         msg = resp.choices[0].message

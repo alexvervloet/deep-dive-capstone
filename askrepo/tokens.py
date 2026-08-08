@@ -21,7 +21,7 @@ _PER_MESSAGE_OVERHEAD = 4
 # A few representative windows for sizing. Real numbers move (see ../MODELS.md);
 # what matters is the ratio of your conversation to the window, not the figure.
 CONTEXT_WINDOWS = {
-    "gpt-4o-mini": 128_000,
+    "gpt-5.4-nano": 128_000,
     "claude-haiku-4-5": 200_000,
 }
 

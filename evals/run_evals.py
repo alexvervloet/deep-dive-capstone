@@ -149,7 +149,7 @@ def run(args):
     # could be the answerer *or* the grader moving. JUDGE_PROVIDER/JUDGE_MODEL
     # pin it (default: same as the answer provider, so existing baselines are
     # unchanged). For the ext-local run: answer with local, but JUDGE_PROVIDER=
-    # openai keeps the same gpt-4o-mini judge the cloud baseline used: a fair
+    # openai keeps the same gpt-5.4-nano judge the cloud baseline used: a fair
     # A/B on the answerer alone. (Only the offline eval touches the cloud; the
     # product path (index, retrieve, answer) stays fully local.)
     judge_provider = get_provider(
