@@ -36,14 +36,14 @@ matters: MCP hosts spawn servers without your shell, so the zsh `secrun`
 function (../SECRETS.md) isn't available there; secrun.sh is the same
 keychain injection as a script.
 
-SDK note: targets the official `mcp` Python SDK 1.x (`mcp.server.fastmcp`).
+SDK note: targets the official `mcp` Python SDK 2.x (`mcp.server.mcpserver`).
 The rest of askrepo does not import this module, so every earlier tag's
 promise holds: nothing else needs the SDK installed.
 """
 
 import sys
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from askrepo.config import load_config
 from askrepo.guardrails import harden_messages, sanitize
@@ -51,7 +51,7 @@ from askrepo.ops import Budget, ResponseCache, cache_key
 from askrepo.prompts import CONTRACT_VERSION, build_messages, format_context
 from askrepo.providers import cost_usd, get_provider
 
-mcp = FastMCP("askrepo")
+mcp = MCPServer("askrepo")
 
 # One server process = one session: the budget meter and answer cache live for
 # its lifetime (the cache is disk-backed anyway: v07, so hits survive
@@ -85,7 +85,7 @@ def _no_exit(fn, *args, **kwargs):
 
     Library code raises SystemExit for CLI-friendly messages ("No index
     found..."). In a server that would kill the process; MCP wants tool
-    errors in-band (isError content), which FastMCP builds from ordinary
+    errors in-band (isError content), which MCPServer builds from ordinary
     exceptions, so translate.
     """
     try:
@@ -160,7 +160,7 @@ def do_ask(question, k=5, provider=None):
     return text
 
 
-# The docstrings below are not documentation garnish: FastMCP sends them to
+# The docstrings below are not documentation garnish: MCPServer sends them to
 # the host as each tool's `description`, and the type hints become the input
 # schema. They are the calling model's ONLY clue for choosing a tool: the
 # same "a tool is a name, a description, and a schema" lesson as the agents
