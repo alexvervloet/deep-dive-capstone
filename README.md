@@ -488,7 +488,11 @@ dive's modules (cache, cost, reliability, observability):
   timed spans, tokens, cost, cache hit/miss) that reconstructs the request
   after the fact; off by default so normal output stays clean.
 
-And the point of the whole layer: **the [26-test suite](tests/) runs entirely
-on the mock** (cache, budget, retries, guardrails, chunkers, prompt assembly,
-and the offline CLI path) in 2ms with no key, no network. `python -m unittest
-discover -s tests`. CI never needs a secret.
+And the point of the whole layer: **the [test suite](tests/) runs entirely on
+the mock** (cache, budget, retries, guardrails, chunkers, prompt assembly, and
+the offline CLI path) with no key and no network. `python -m unittest discover
+-s tests`. CI never needs a secret.
+
+v07 froze at 26 tests; the extensions took it to **71, in under a second**. Of
+those, the 8 MCP tests skip unless the MCP SDK is installed, so a clone with
+nothing but the standard library still runs 63 of them green.
