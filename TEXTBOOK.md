@@ -56,7 +56,7 @@ Metrics name mechanisms if you read them closely, and libel systems if you do no
 
 Honesty compounds. The refuted prediction taught more than a confirmation would have. The residual attack, reported unstopped, is worth more to a reader than a clean table. The mock that announces itself, the printed retrieval, the manifest-stamped baseline: each is a small tax paid so that every later claim can be checked, and together they are why the project's numbers are worth anything at all. This is the through-line of the series' [AUTHORING-LESSONS.md](../AUTHORING-LESSONS.md), lived rather than stated: the reader believes the output, so the output has to be worth believing.
 
-And the boring layers carried the product. The v07 ops wrap (cache, budget, retries, traces) is the least glamorous tag and the reason the whole 26-test suite runs in milliseconds with no key and no network, which is the reason CI never needs a secret, which is the reason every later extension could be verified cheaply. Chapter 8 made this argument in the abstract; the capstone is what it looks like when the argument is load-bearing.
+And the boring layers carried the product. The v07 ops wrap (cache, budget, retries, traces) is the least glamorous tag and the reason the whole 71-test suite runs in under a second with no key and no network, which is the reason CI never needs a secret, which is the reason every later extension could be verified cheaply. Chapter 8 made this argument in the abstract; the capstone is what it looks like when the argument is load-bearing.
 
 ## 17.7 Where the course leaves you
 
