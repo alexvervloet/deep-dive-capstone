@@ -4,7 +4,8 @@ The server is a thin protocol skin over functions we can call directly:
 do_search and do_ask. A fake provider that streams a *poisoned* answer proves
 the guardrail wiring (v06) without a model; patched retrieval proves the
 search formatting without an index. Needs the `mcp` package installed (it's
-in requirements.txt) but never a key; FastMCP is imported, not spoken to.
+in requirements.txt) but never a key; the server object is imported, not
+spoken to.
 """
 
 import asyncio
@@ -38,7 +39,22 @@ class FakeProvider:
         yield self.answer
 
 
-@unittest.skipUnless(importlib.util.find_spec("mcp"), "mcp SDK not installed")
+def _has_mcp_server():
+    """Is the SDK module askrepo/mcp_server.py imports actually available?
+
+    Checking the top-level `mcp` package isn't enough: SDK 1.x ships `mcp`
+    without `mcp.server.mcpserver` (that's 2.x), so a stale install passed the
+    guard and turned a version mismatch into 8 errors instead of 8 skips.
+    find_spec raises rather than returning None when a parent package is
+    missing, hence the catch.
+    """
+    try:
+        return importlib.util.find_spec("mcp.server.mcpserver") is not None
+    except ModuleNotFoundError:
+        return False
+
+
+@unittest.skipUnless(_has_mcp_server(), "MCP SDK 2.x not installed")
 class TestMCPServer(unittest.TestCase):
     def setUp(self):
         os.environ["PROVIDER"] = "mock"
