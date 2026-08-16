@@ -26,6 +26,7 @@ from askrepo.assemble import ChunkPool, assemble
 from askrepo.memory import ChatMemory, truncating_summarizer
 from askrepo.prompts import FEW_SHOTS, SYSTEM_PROMPT
 from askrepo.providers import cost_usd
+from askrepo.retrieve import load_index, retrieve
 
 
 def model_summarizer(provider):
@@ -84,8 +85,6 @@ def new_session(window_tokens, provider):
 
 def _retrieve(question, session):
     """This turn's (score, chunk) pairs, or [] on the mock/no-index path."""
-    from askrepo.retrieve import load_index, retrieve
-
     index = load_index()
     return retrieve(question, index, k=session.k, blend=session.blend)
 
