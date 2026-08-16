@@ -26,6 +26,7 @@ Adapted from context-engineering-deep-dive/context/assemble.py.
 from dataclasses import dataclass
 
 from askrepo import tokens
+from askrepo.prompts import format_context
 
 
 @dataclass
@@ -107,8 +108,6 @@ class ChunkPool:
 
     def sections(self, current_turn):
         """Every pooled chunk as a citation-labeled Section, aged by recency."""
-        from askrepo.prompts import format_context
-
         out = []
         for entry in self._chunks.values():
             chunk = entry["chunk"]
