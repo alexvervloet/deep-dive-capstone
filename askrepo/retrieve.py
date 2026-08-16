@@ -23,6 +23,7 @@ import re
 from collections import Counter
 
 from askrepo.indexer import INDEX_PATH
+from askrepo.ops import with_retry
 from askrepo.providers import embed
 
 
@@ -103,8 +104,6 @@ def retrieve(question, index, k=5, blend=0.7):
     """
     chunks = index["chunks"]
     # embedding is one clean request: the ideal thing to retry on a blip
-    from askrepo.ops import with_retry
-
     query_vector, _ = with_retry(
         lambda: embed([question], index["stack"], input_type="query")
     )
