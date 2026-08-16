@@ -13,8 +13,11 @@ installed packages; the v00 promise holds at every tag.
 """
 
 import importlib.util
+import json
 import os
 import sys
+import urllib.error
+import urllib.request
 
 _USE_COLOR = sys.stdout.isatty() and os.getenv("NO_COLOR") is None
 
@@ -154,10 +157,6 @@ def check_local_server(env):
     another; it probes the standard `/v1/models` endpoint they all expose.
     Standard library only, so the no-install promise holds."""
     print("\nLocal model server")
-    import json as _json
-    import urllib.error
-    import urllib.request
-
     base = _get(env, "LOCAL_BASE_URL") or (
         (_get(env, "OLLAMA_HOST") or "http://localhost:11434") + "/v1")
     chat_model = _get(env, "LOCAL_MODEL") or _get(env, "MODEL") or "qwen3"
@@ -169,7 +168,7 @@ def check_local_server(env):
         req.add_header("Authorization", f"Bearer {api_key}")
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
-            served = {m.get("id", "") for m in _json.load(resp).get("data", [])}
+            served = {m.get("id", "") for m in json.load(resp).get("data", [])}
     except (urllib.error.URLError, OSError, ValueError) as e:
         fail(f"can't reach a local model server at {base} ({e}).")
         print("    Start your runner (Ollama / LM Studio / llama.cpp / vLLM). If")
