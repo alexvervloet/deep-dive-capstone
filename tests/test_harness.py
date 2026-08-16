@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from askrepo import agent  # noqa: E402
 from askrepo.harness import (  # noqa: E402
-    ALLOW, ASK, DENY, AuditLog, Harness, PermissionPolicy, ReadOnlySandbox,
+    ALLOW, DENY, Harness, PermissionPolicy, ReadOnlySandbox,
     SandboxError, default_harness, permissive_harness,
 )
 
