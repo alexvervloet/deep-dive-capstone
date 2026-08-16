@@ -11,7 +11,7 @@ This module budgets all three explicitly and runs one turn. Two memories with
 two lifetimes do the work: a ChatMemory carries the conversation thread (clean
 question/answer text, compacted when it outgrows its slice), and a ChunkPool
 carries the evidence (retrieved chunks, aged so fresh relevance wins the budget
-fight). The chunk context is attached to the *current* outgoing message only 
+fight). The chunk context is attached to the *current* outgoing message only
 never persisted into the thread, so compaction never folds raw file text into
 a summary, and the conversation stays legible.
 
@@ -20,7 +20,6 @@ compaction path still runs, on the deterministic summarizer): the v00 promise,
 kept into the chat feature.
 """
 
-import sys
 from dataclasses import dataclass, field
 
 from askrepo.assemble import ChunkPool, assemble
@@ -36,17 +35,21 @@ def model_summarizer(provider):
     preserve concrete facts and file references" keeps citations recoverable in
     later turns. Falls back to the offline summarizer if the call yields nothing.
     """
+
     def summarize(messages):
-        transcript = "\n".join(f"{m['role']}: {m.get('content','')}" for m in messages)
+        transcript = "\n".join(f"{m['role']}: {m.get('content', '')}" for m in messages)
         prompt = [
-            {"role": "system", "content":
-                "Summarize the conversation below in a few sentences. Preserve "
+            {
+                "role": "system",
+                "content": "Summarize the conversation below in a few sentences. Preserve "
                 "concrete facts, decisions, and any file paths or (path:line) "
-                "citations mentioned. Be terse."},
+                "citations mentioned. Be terse.",
+            },
             {"role": "user", "content": transcript},
         ]
         out = "".join(provider.complete(prompt)).strip()
         return out or truncating_summarizer(messages)
+
     return summarize
 
 
@@ -72,7 +75,9 @@ def new_session(window_tokens, provider):
     """
     chunk_budget = window_tokens // 2
     turn_budget = window_tokens // 3
-    summarizer = truncating_summarizer if provider.name == "mock" else model_summarizer(provider)
+    summarizer = (
+        truncating_summarizer if provider.name == "mock" else model_summarizer(provider)
+    )
     memory = ChatMemory(budget_tokens=turn_budget, keep_recent=2, summarizer=summarizer)
     return ChatSession(memory=memory, chunk_budget=chunk_budget)
 
@@ -102,7 +107,11 @@ def respond(session, question, provider, *, on_context=None):
         assembled = assemble(session.pool.sections(session.turn), session.chunk_budget)
         session.last_context = assembled
         if assembled.kept:
-            context_text = "Context (retrieved across this conversation):\n\n" + assembled.text() + "\n\n"
+            context_text = (
+                "Context (retrieved across this conversation):\n\n"
+                + assembled.text()
+                + "\n\n"
+            )
         if on_context:
             on_context(assembled)
 
@@ -113,8 +122,12 @@ def respond(session, question, provider, *, on_context=None):
         system += f"\n\nEarlier in this conversation:\n{summary}"
 
     user_content = f"{context_text}Question: {question}"
-    messages = [{"role": "system", "content": system}, *FEW_SHOTS, *prior_turns,
-                {"role": "user", "content": user_content}]
+    messages = [
+        {"role": "system", "content": system},
+        *FEW_SHOTS,
+        *prior_turns,
+        {"role": "user", "content": user_content},
+    ]
 
     # 3. generate
     answer = "".join(provider.complete(messages))
@@ -133,6 +146,8 @@ def context_line(session):
     kept = len(session.last_context.kept) if session.last_context else 0
     dropped = len(session.last_context.dropped) if session.last_context else 0
     used = session.last_context.tokens_used if session.last_context else 0
-    return (f"[context: {kept} chunks kept / {dropped} evicted ({used} tok) · "
-            f"{mem['turns_sent']} turns sent · {mem['compactions']} compactions · "
-            f"summary {'yes' if mem['has_summary'] else 'no'}]")
+    return (
+        f"[context: {kept} chunks kept / {dropped} evicted ({used} tok) · "
+        f"{mem['turns_sent']} turns sent · {mem['compactions']} compactions · "
+        f"summary {'yes' if mem['has_summary'] else 'no'}]"
+    )
