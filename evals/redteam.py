@@ -32,6 +32,7 @@ sys.path.insert(0, ROOT)
 from askrepo import agent  # noqa: E402
 from askrepo import guardrails  # noqa: E402
 from askrepo.config import load_config  # noqa: E402
+from askrepo.harness import default_harness, permissive_harness  # noqa: E402
 from askrepo.prompts import build_messages, format_context  # noqa: E402
 from askrepo.providers import get_provider  # noqa: E402
 
@@ -55,8 +56,6 @@ def answer_agent(question, provider, defend):
     # prompt notice + output sanitize) AND the structural one (feat/harness:
     # permission policy + read-only sandbox + audit). Undefended is the v05
     # before-picture: permissive harness, any tool, any file inside the jail.
-    from askrepo.harness import default_harness, permissive_harness
-
     harness = default_harness(FIXTURES) if defend else permissive_harness(FIXTURES)
     original = agent.AGENT_SYSTEM
     if defend:
