@@ -31,7 +31,7 @@ an answer, it just narrows what one can do.
 import os
 import re
 
-from askrepo.harness import SandboxError, default_harness
+from askrepo.harness import ALLOW, DENY, SandboxError, default_harness
 from askrepo.indexer import HERE as CAPSTONE_ROOT
 from askrepo.indexer import INDEXED_EXTENSIONS, SKIP_DIRS
 from askrepo.prompts import DECLINE_PHRASE
@@ -186,8 +186,6 @@ def run_tool(harness, name, args, touched):
     see why and try something legitimate instead; the loop never dies on a
     hostile suggestion.
     """
-    from askrepo.harness import ALLOW, DENY
-
     if harness.decide(name, args) != ALLOW:
         return f"error: tool {name!r} denied by permission policy"
     try:
