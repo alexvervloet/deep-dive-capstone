@@ -18,7 +18,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import cast  # noqa: E402
 
 from askrepo import providers  # noqa: E402
-from askrepo.providers import LocalProvider, cost_usd, embed, get_provider  # noqa: E402
+from askrepo.providers import (  # noqa: E402
+    MAX_TOKENS, LocalProvider, cost_usd, embed, get_provider,
+)
 
 
 class FakeOpenAI:
@@ -101,7 +103,6 @@ class TestLocalProvider(unittest.TestCase):
         # thinking models spend output tokens reasoning before the answer, so
         # local's budget must exceed the cloud default (a 1024 cap can be fully
         # consumed by reasoning, leaving content empty)
-        from askrepo.providers import MAX_TOKENS
         self.assertGreater(cast(LocalProvider, get_provider("local")).max_tokens, MAX_TOKENS)
         with patch.dict(os.environ, {"LOCAL_MAX_TOKENS": "20000"}):
             self.assertEqual(providers.LocalProvider().max_tokens, 20000)
