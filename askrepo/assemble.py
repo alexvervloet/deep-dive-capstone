@@ -23,7 +23,7 @@ Both are pure functions over data: no model, no key, testable offline.
 Adapted from context-engineering-deep-dive/context/assemble.py.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from askrepo import tokens
 
@@ -113,11 +113,15 @@ class ChunkPool:
         for entry in self._chunks.values():
             chunk = entry["chunk"]
             age = current_turn - entry["last_turn"]
-            priority = entry["score"] * (self.decay ** age)
-            out.append(Section(
-                label=self._key(chunk),
-                text=format_context(chunk["path"], chunk["text"], start=chunk["start_line"]),
-                priority=priority,
-                kind="chunk",
-            ))
+            priority = entry["score"] * (self.decay**age)
+            out.append(
+                Section(
+                    label=self._key(chunk),
+                    text=format_context(
+                        chunk["path"], chunk["text"], start=chunk["start_line"]
+                    ),
+                    priority=priority,
+                    kind="chunk",
+                )
+            )
         return out
