@@ -39,7 +39,9 @@ def _produce(args, config, provider, trace):
             corpus_root = load_index()["corpus_root"]
             harness = default_harness(corpus_root)
             text, touched, n_calls, cost = agent_answer(
-                args.question, corpus_root, provider,
+                args.question,
+                corpus_root,
+                provider,
                 on_tool=lambda name, targs: print(
                     f"tool: {name}({', '.join(f'{k}={v!r}' for k, v in targs.items())})",
                     file=sys.stderr,
@@ -48,9 +50,11 @@ def _produce(args, config, provider, trace):
             )
         print(text, flush=True)
         denied = harness.audit.denied
-        print(f"cost: ${cost:.6f} ({n_calls} tool calls, "
-              f"{len(touched)} files touched, {len(denied)} denied by harness)",
-              file=sys.stderr)
+        print(
+            f"cost: ${cost:.6f} ({n_calls} tool calls, "
+            f"{len(touched)} files touched, {len(denied)} denied by harness)",
+            file=sys.stderr,
+        )
         trace.set(mode="agent", tool_calls=n_calls, cost_usd=round(cost, 6))
         return text, cost
 
@@ -73,8 +77,11 @@ def _produce(args, config, provider, trace):
                 args.question, k=args.k, blend=float(config["BLEND"])
             )
         for score, chunk in sources:
-            print(f"retrieved: {chunk['path']}:{chunk['start_line']}-"
-                  f"{chunk['end_line']} (score {score:.2f})", file=sys.stderr)
+            print(
+                f"retrieved: {chunk['path']}:{chunk['start_line']}-"
+                f"{chunk['end_line']} (score {score:.2f})",
+                file=sys.stderr,
+            )
 
     parts = []
     with trace.span("generate"):
@@ -86,21 +93,33 @@ def _produce(args, config, provider, trace):
     cost = cost_usd(provider)
     in_tok, out_tok = provider.usage
     if cost is None:
-        print(f"tokens: {in_tok} in / {out_tok} out "
-              f"(no price on file for {provider.model}; see ../MODELS.md)",
-              file=sys.stderr)
+        print(
+            f"tokens: {in_tok} in / {out_tok} out "
+            f"(no price on file for {provider.model}; see ../MODELS.md)",
+            file=sys.stderr,
+        )
         cost = 0.0
     else:
         # six decimals: a cheap real call is ~$0.00002; "$0.0000" would lie
         # that it was free; only the mock prints a true zero
         print(f"cost: ${cost:.6f} ({in_tok} in / {out_tok} out)", file=sys.stderr)
-    trace.set(mode=args.mode, input_tokens=in_tok, output_tokens=out_tok,
-              cost_usd=round(cost, 6))
+    trace.set(
+        mode=args.mode,
+        input_tokens=in_tok,
+        output_tokens=out_tok,
+        cost_usd=round(cost, 6),
+    )
     return "".join(parts), cost
 
 
 def cmd_ask(args):
-    from askrepo.ops import Budget, BudgetExceeded, ResponseCache, cache_key, start_trace
+    from askrepo.ops import (
+        Budget,
+        BudgetExceeded,
+        ResponseCache,
+        cache_key,
+        start_trace,
+    )
     from askrepo.prompts import CONTRACT_VERSION
 
     config = load_config()
@@ -108,8 +127,15 @@ def cmd_ask(args):
 
     # cache key over everything that shapes the answer: any change busts it
     key = cache_key(
-        provider.name, provider.model, CONTRACT_VERSION, args.mode,
-        args.k, config["BLEND"], bool(args.raw), tuple(args.context), args.question,
+        provider.name,
+        provider.model,
+        CONTRACT_VERSION,
+        args.mode,
+        args.k,
+        config["BLEND"],
+        bool(args.raw),
+        tuple(args.context),
+        args.question,
     )
     cache = ResponseCache()
     budget = Budget(float(config["BUDGET"]))
@@ -176,12 +202,16 @@ def cmd_chat(args):
     budget = Budget(float(config["BUDGET"]))
     session = new_session(args.window, provider)
 
-    print(f"provider: {provider.name} ({provider.model}) · window {args.window} tok "
-          f"(chunks {session.chunk_budget} / turns {session.memory.budget})",
-          file=sys.stderr)
+    print(
+        f"provider: {provider.name} ({provider.model}) · window {args.window} tok "
+        f"(chunks {session.chunk_budget} / turns {session.memory.budget})",
+        file=sys.stderr,
+    )
     if provider.name == "mock":
-        print("note: mock provider; no retrieval; conversation + compaction only.",
-              file=sys.stderr)
+        print(
+            "note: mock provider; no retrieval; conversation + compaction only.",
+            file=sys.stderr,
+        )
 
     def one_turn(question):
         with start_trace("chat") as trace:
@@ -196,9 +226,13 @@ def cmd_chat(args):
             print(answer, flush=True)
             if args.show_context:
                 print(context_line(session), file=sys.stderr)
-            print(f"cost: ${cost:.6f} (session ${budget.spent_usd:.6f})", file=sys.stderr)
-            trace.set(cost_usd=round(cost, 6), **{k: session.memory.info()[k]
-                      for k in ("compactions", "turns_sent")})
+            print(
+                f"cost: ${cost:.6f} (session ${budget.spent_usd:.6f})", file=sys.stderr
+            )
+            trace.set(
+                cost_usd=round(cost, 6),
+                **{k: session.memory.info()[k] for k in ("compactions", "turns_sent")},
+            )
             return True
 
     # one-shot: a single question and exit
@@ -207,8 +241,10 @@ def cmd_chat(args):
         return 0
 
     # interactive REPL
-    print("chat with the corpus. 'quit' to exit, '/context' to toggle the "
-          "window view.", file=sys.stderr)
+    print(
+        "chat with the corpus. 'quit' to exit, '/context' to toggle the window view.",
+        file=sys.stderr,
+    )
     while True:
         try:
             line = input("you> ").strip()
@@ -221,8 +257,10 @@ def cmd_chat(args):
             break
         if line == "/context":
             args.show_context = not args.show_context
-            print(f"  [context view {'on' if args.show_context else 'off'}]",
-                  file=sys.stderr)
+            print(
+                f"  [context view {'on' if args.show_context else 'off'}]",
+                file=sys.stderr,
+            )
             continue
         if not one_turn(line):
             break  # budget exhausted
@@ -269,9 +307,7 @@ def main(argv=None):
     )
     ask.set_defaults(func=cmd_ask)
 
-    index = subparsers.add_parser(
-        "index", help="chunk and embed a corpus directory"
-    )
+    index = subparsers.add_parser("index", help="chunk and embed a corpus directory")
     index.add_argument("path", help="root of the corpus to index (e.g. ..)")
     index.set_defaults(func=cmd_index)
 
@@ -287,16 +323,20 @@ def main(argv=None):
         "chat", help="multi-turn grounded conversation with the corpus (ext-context)"
     )
     chat.add_argument(
-        "question", nargs="*",
+        "question",
+        nargs="*",
         help="ask once and exit; omit for an interactive REPL",
     )
     chat.add_argument(
-        "--window", type=int, default=6000,
+        "--window",
+        type=int,
+        default=6000,
         help="token budget for the whole window (default 6000); split across "
-             "retrieved chunks and conversation turns",
+        "retrieved chunks and conversation turns",
     )
     chat.add_argument(
-        "--show-context", action="store_true",
+        "--show-context",
+        action="store_true",
         help="print the per-turn window accounting (chunks kept/evicted, compactions)",
     )
     chat.set_defaults(func=cmd_chat)
