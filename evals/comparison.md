@@ -11,7 +11,7 @@ Same golden set (40 questions), same model (gpt-4o-mini), same corpus (see the m
 | decline accuracy | 1.000 | 1.000 |
 | mean cost / question | $0.000407 | $0.001560 |
 | mean latency | 2.7s | 9.4s |
-| mean tool calls | — | 5.2 |
+| mean tool calls | n/a | 5.2 |
 
 | correctness by category | rag | agent |
 |---|---|---|
