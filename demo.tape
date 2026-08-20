@@ -1,23 +1,23 @@
-# demo.tape — regenerate the askrepo demo GIF + social-preview still.
+# demo.tape: regenerate the askrepo demo GIF + social-preview still.
 #
 # Prereqs (run everything from the repo root):
 #   brew install vhs
 #   secrun env PROVIDER=openai .venv/bin/python -m askrepo index ..   # build the index once
-# Then — run vhs THROUGH secrun so your keychain API key flows into the recorded
+# Then, run vhs THROUGH secrun so your keychain API key flows into the recorded
 # commands via the environment (nothing secret is written to the tape or GIF):
 #   secrun vhs demo.tape
 #
 # Outputs:
-#   assets/demo.gif       — the animated README demo
-#   assets/demo-card.png  — a still of the hero answer, sized 1280x640 for the
+#   assets/demo.gif       : the animated README demo
+#   assets/demo-card.png  : a still of the hero answer, sized 1280x640 for the
 #                           GitHub social preview (Settings -> General -> Social preview)
 #
-# This runs the REAL tool against the REAL index — every answer and every
+# This runs the REAL tool against the REAL index. Every answer and every
 # (path:line) citation is genuine, not scripted. If an answer hasn't finished
 # streaming before the Screenshot/clear, bump the Sleep just above it.
 #
 # To show the pricier-but-sharper Claude answers instead, change PROVIDER=openai
-# to PROVIDER=claude in the alias below (the existing index still works — the
+# to PROVIDER=claude in the alias below (the existing index still works, the
 # query is embedded with whatever stack the index was built with).
 
 Output assets/demo.gif
@@ -41,7 +41,7 @@ Type "clear"
 Enter
 Show
 
-# --- hero: barge-in — this frame is captured as the social card ---
+# --- hero: barge-in. This frame is captured as the social card ---
 Type "askrepo ask 'what is barge-in?'"
 Enter
 Sleep 7s

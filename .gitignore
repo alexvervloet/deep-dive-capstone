@@ -4,7 +4,7 @@ __pycache__/
 .venv/
 venv/
 
-# Secrets — never commit your real keys
+# Secrets: never commit your real keys
 .env
 # ...except the planted DECOY key in the red-team fixture corpus, which is
 # the whole point of that file (feat/harness measures whether the agent can
@@ -18,5 +18,5 @@ venv/
 # The built index and answer cache (regenerated; outputs, not source)
 index/
 
-# Eval runs are outputs — except the frozen baseline, which IS committed
+# Eval runs are outputs, except the frozen baseline, which IS committed
 evals/runs/
