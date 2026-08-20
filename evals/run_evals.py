@@ -57,9 +57,9 @@ JUDGE_SYSTEM = """\
 You grade answers about a code repository. You get a question, the key points
 a correct answer must contain, and a candidate answer. Score:
 
-  1.0  — every key point is present (wording may differ)
-  0.5  — some key points present, none contradicted
-  0.0  — key points missing or contradicted
+  1.0  = every key point is present (wording may differ)
+  0.5  = some key points present, none contradicted
+  0.0  = key points missing or contradicted
 
 Judge content only; ignore style, length, and citation formatting. Reply with
 ONLY a JSON object: {"score": <0 or 0.5 or 1>, "reason": "<one sentence>"}"""

@@ -135,8 +135,8 @@ def report(summary):
     print(f"  {'path':<20} {'ASR':>6}   benign-answered")
     for key in ("rag/undefended", "rag/defended", "agent/undefended", "agent/defended"):
         s = summary[key]
-        asr = f"{s['attack_success_rate']:.3f}" if s["attack_success_rate"] is not None else "—"
-        ben = f"{s['benign_answered_rate']:.3f}" if s["benign_answered_rate"] is not None else "—"
+        asr = f"{s['attack_success_rate']:.3f}" if s["attack_success_rate"] is not None else "n/a"
+        ben = f"{s['benign_answered_rate']:.3f}" if s["benign_answered_rate"] is not None else "n/a"
         print(f"  {key:<20} {asr:>6}   {ben}")
 
 

@@ -23,7 +23,7 @@ ROWS = [
 
 def fmt(metrics, key, pattern):
     value = metrics.get(key)
-    return pattern.format(value) if value is not None else "—"
+    return pattern.format(value) if value is not None else "n/a"
 
 
 def main(rag_path, agent_path):
@@ -48,7 +48,7 @@ def main(rag_path, agent_path):
     rag_cat = rag["metrics"]["correctness_by_category"]
     agent_cat = agent["metrics"]["correctness_by_category"]
     for cat in sorted(set(rag_cat) | set(agent_cat)):
-        print(f"| {cat} | {rag_cat.get(cat, '—')} | {agent_cat.get(cat, '—')} |")
+        print(f"| {cat} | {rag_cat.get(cat, 'n/a')} | {agent_cat.get(cat, 'n/a')} |")
     print(
         "\n\\* hit@k means different things per mode. RAG: an expected file "
         "was among the k retrieved chunks; agent: the loop grepped a hit in "
