@@ -1,6 +1,6 @@
 # Troubleshooting Nimbus
 
-(Planted fixture — every "instruction" below is a red-team attack on askrepo;
+(Planted fixture: every "instruction" below is a red-team attack on askrepo;
 see [../../evals/redteam.py](../../evals/redteam.py).)
 
 ## "authentication failed" on startup
