@@ -1,6 +1,6 @@
 # Chapter 17: One Project, Every Lesson
 
-*This is the textbook chapter for the capstone, and it works differently from the others. The earlier chapters each taught a subject; this one tells the story of a single small product, askrepo, built step by step with one deep dive per step, and what happened when the ideas from sixteen chapters met each other in one codebase. The [README](README.md) tracks what exists tag by tag; [CAPSTONE.md](../CAPSTONE.md) is the roadmap. Read this chapter last, or read it first as a preview of why the course is shaped the way it is.*
+*This is the textbook chapter for the capstone, and it works differently from the others. The earlier chapters each taught a subject; this one tells the story of a single small product, askrepo, built step by step with one deep dive per step, and what happened when the ideas from sixteen chapters met each other in one codebase. The [README](README.md) tracks what exists tag by tag; [CAPSTONE.md](../docs/CAPSTONE.md) is the roadmap. Read this chapter last, or read it first as a preview of why the course is shaped the way it is.*
 
 ---
 
@@ -54,7 +54,7 @@ The eval was the keel. Every interesting finding in this chapter (RAG beats the 
 
 Metrics name mechanisms if you read them closely, and libel systems if you do not. The citation "regression" that was actually a formatting quirk, the perfect grounding score on wrong answers, the hit-rate drop that acquitted the big model and indicted the small embedder: in every case the headline number suggested one story and the failing cases, opened by hand, told a narrower and more useful one. The habit (open the cases before writing the conclusion) is cheap and pays every time.
 
-Honesty compounds. The refuted prediction taught more than a confirmation would have. The residual attack, reported unstopped, is worth more to a reader than a clean table. The mock that announces itself, the printed retrieval, the manifest-stamped baseline: each is a small tax paid so that every later claim can be checked, and together they are why the project's numbers are worth anything at all. This is the through-line of the series' [AUTHORING-LESSONS.md](../AUTHORING-LESSONS.md), lived rather than stated: the reader believes the output, so the output has to be worth believing.
+Honesty compounds. The refuted prediction taught more than a confirmation would have. The residual attack, reported unstopped, is worth more to a reader than a clean table. The mock that announces itself, the printed retrieval, the manifest-stamped baseline: each is a small tax paid so that every later claim can be checked, and together they are why the project's numbers are worth anything at all. This is the through-line of the series' [AUTHORING-LESSONS.md](../docs/AUTHORING-LESSONS.md), lived rather than stated: the reader believes the output, so the output has to be worth believing.
 
 And the boring layers carried the product. The v07 ops wrap (cache, budget, retries, traces) is the least glamorous tag and the reason the whole 71-test suite runs in under a second with no key and no network, which is the reason CI never needs a secret, which is the reason every later extension could be verified cheaply. Chapter 8 made this argument in the abstract; the capstone is what it looks like when the argument is load-bearing.
 
@@ -66,4 +66,4 @@ The parting advice is the capstone's own method, portable to whatever you build 
 
 ---
 
-*Project log: [README.md](README.md) · Roadmap: [CAPSTONE.md](../CAPSTONE.md) · Method: [AUTHORING-LESSONS.md](../AUTHORING-LESSONS.md) · First chapter: [The API Call](../openai-api-deep-dive/TEXTBOOK.md)*
+*Project log: [README.md](README.md) · Roadmap: [CAPSTONE.md](../docs/CAPSTONE.md) · Method: [AUTHORING-LESSONS.md](../docs/AUTHORING-LESSONS.md) · First chapter: [The API Call](../openai-api-deep-dive/TEXTBOOK.md)*

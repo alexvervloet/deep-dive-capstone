@@ -33,7 +33,7 @@ Run it the way a host would (stdio; stderr is for humans, stdout is protocol):
 
 `.mcp.json` in this repo does exactly that for Claude Code. The launcher
 matters: MCP hosts spawn servers without your shell, so the zsh `secrun`
-function (../SECRETS.md) isn't available there; secrun.sh is the same
+function (../docs/SECRETS.md) isn't available there; secrun.sh is the same
 keychain injection as a script.
 
 SDK note: targets the official `mcp` Python SDK 2.x (`mcp.server.mcpserver`).

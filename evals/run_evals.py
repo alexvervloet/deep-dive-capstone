@@ -3,7 +3,7 @@
     secrun python evals/run_evals.py                    # score a run
     secrun python evals/run_evals.py --freeze-baseline  # commit-worthy snapshot
 
-Five metrics (the design is in ../CAPSTONE.md; the patterns come from
+Five metrics (the design is in ../docs/CAPSTONE.md; the patterns come from
 evals-deep-dive/evals/):
 
   hit@k               did retrieval surface any expected file? (pipeline-only,

@@ -10,7 +10,7 @@ retrieves its own context. `--context <file>` still overrides retrieval for
 hand-fed grounding. Later steps hang new subcommands off this skeleton:
 `redteam` (v06), and `chat` (ext-context): a multi-turn conversation that
 budgets the window across accumulating chunks and compacted turns. See
-../CAPSTONE.md for the roadmap.
+../docs/CAPSTONE.md for the roadmap.
 """
 
 import argparse
@@ -95,7 +95,7 @@ def _produce(args, config, provider, trace):
     if cost is None:
         print(
             f"tokens: {in_tok} in / {out_tok} out "
-            f"(no price on file for {provider.model}; see ../MODELS.md)",
+            f"(no price on file for {provider.model}; see ../docs/MODELS.md)",
             file=sys.stderr,
         )
         cost = 0.0

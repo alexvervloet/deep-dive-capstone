@@ -39,7 +39,7 @@ refuses to blur that line.
 ## 2. Grounded question with citation (v04 category: `concept`)
 
 **Ask:** `What model does the series default to, and why?`
-`--context ../MODELS.md`
+`--context ../docs/MODELS.md`
 
 **After** (gpt-4o-mini):
 
@@ -58,12 +58,12 @@ resolves.
 > cheap iteration" (MODELS.md:55). ...
 
 Same contract, both providers; Haiku is wordier but every claim is cited.
-(Note for v04's citation scorer: models may normalize `../MODELS.md` to
+(Note for v04's citation scorer: models may normalize `../docs/MODELS.md` to
 `MODELS.md` in citations; the scorer should compare resolved paths.)
 
 ## 3. Answer not in the provided context (v04 category: `negative`)
 
-**Ask:** `How does the secrun wrapper store API keys?` `--context ../MODELS.md`
+**Ask:** `How does the secrun wrapper store API keys?` `--context ../docs/MODELS.md`
 (the answer lives in SECRETS.md, not the provided file)
 
 **After** (gpt-4o-mini):
@@ -83,7 +83,7 @@ chunks, this rule is what turns a hallucination into a visible miss.
 
 ## 4. Prior-knowledge temptation (v04 category: `negative`)
 
-**Ask:** `What is the capital of France?` `--context ../MODELS.md`
+**Ask:** `What is the capital of France?` `--context ../docs/MODELS.md`
 
 **After** (gpt-4o-mini):
 
@@ -103,7 +103,7 @@ off-topic questions.
 secrun python -m askrepo ask "What chunk size should I use for RAG?" --raw
 # after
 secrun python -m askrepo ask "What chunk size should I use for RAG?"
-secrun python -m askrepo ask "What model does the series default to, and why?" --context ../MODELS.md
+secrun python -m askrepo ask "What model does the series default to, and why?" --context ../docs/MODELS.md
 ```
 
 Transcripts are snapshots, not assertions; models drift. v04 turns these

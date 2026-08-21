@@ -18,7 +18,7 @@ context-engineering-deep-dive/context/tokens.py.
 _CHARS_PER_TOKEN = 4
 _PER_MESSAGE_OVERHEAD = 4
 
-# A few representative windows for sizing. Real numbers move (see ../MODELS.md);
+# A few representative windows for sizing. Real numbers move (see ../docs/MODELS.md);
 # what matters is the ratio of your conversation to the window, not the figure.
 CONTEXT_WINDOWS = {
     "gpt-5.4-nano": 128_000,

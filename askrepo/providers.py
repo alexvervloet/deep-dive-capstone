@@ -55,7 +55,7 @@ def local_client_kwargs(embed=False) -> dict[str, Any]:
            or os.getenv("LOCAL_API_KEY") or "ollama")
     return {"base_url": base, "api_key": key}
 
-# $ per 1M tokens (input, output): same numbers as ../MODELS.md, so the cost
+# $ per 1M tokens (input, output): same numbers as ../docs/MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
 PRICES = {
     "gpt-5.4-nano": (0.20, 1.25),

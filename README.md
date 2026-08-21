@@ -6,7 +6,7 @@ project built step by step, one deep dive per tag, whose default corpus is the
 series itself, so the course answers questions about the course.
 
 The roadmap (every step, what it builds, and its definition of done) lives in
-[../CAPSTONE.md](../CAPSTONE.md). This README tracks what *exists*, tag by tag.
+[../docs/CAPSTONE.md](../docs/CAPSTONE.md). This README tracks what *exists*, tag by tag.
 
 ---
 
@@ -58,7 +58,7 @@ python -m askrepo ask "hello"      # canned answer from the mock provider
 
 For a real model, `pip install -r requirements.txt`, then `cp .env.example
 .env` and set `PROVIDER=openai` or `PROVIDER=claude`. Your API key never goes
-in `.env`, via keychain + `secrun`, per [../SECRETS.md](../SECRETS.md):
+in `.env`, via keychain + `secrun`, per [../docs/SECRETS.md](../docs/SECRETS.md):
 
 ```bash
 secrun python -m askrepo index ..      # embed the series (~$0.01, once)
@@ -73,7 +73,7 @@ and stderr shows exactly which chunks were retrieved and what the call cost.
 
 Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 `main` is always the latest. Fuller definitions in
-[../CAPSTONE.md](../CAPSTONE.md).
+[../docs/CAPSTONE.md](../docs/CAPSTONE.md).
 
 | Tag | Dive exercised | Status | What it added |
 |-----|----------------|--------|---------------|
@@ -90,7 +90,7 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 > below was measured on `gpt-4o-mini`, the series default when those runs were
 > made (2026-07-03 to 2026-07-06); each run file under [`evals/`](evals/)
 > records the exact model it used, and the cost columns are that model's prices.
-> The current default is `gpt-5.4-nano` ([../MODELS.md](../MODELS.md)), which is
+> The current default is `gpt-5.4-nano` ([../docs/MODELS.md](../docs/MODELS.md)), which is
 > a different model at a different price, so a rerun will not reproduce these
 > numbers. Re-freeze the baseline before comparing a new run against it.
 
@@ -98,7 +98,7 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 
 The core (v00–v07) was a sequence; these are a set. Each is a feature branch
 merged to `main` with `--no-ff` and tagged `ext-*`: unordered add-ons from
-[../CAPSTONE.md](../CAPSTONE.md)'s branch-off table, not next steps.
+[../docs/CAPSTONE.md](../docs/CAPSTONE.md)'s branch-off table, not next steps.
 
 | Tag | Dive exercised | Status | What it adds |
 |-----|----------------|--------|--------------|
@@ -322,7 +322,7 @@ behind the unchanged `complete()` interface; switching stacks is one env-var
 change (`PROVIDER=openai|claude`, model overridable via `MODEL`). The cost
 line is now real: each provider reports its actual token usage after the
 stream ends, and the CLI prices it with the same numbers as
-[../MODELS.md](../MODELS.md). The mock keeps working with nothing installed 
+[../docs/MODELS.md](../docs/MODELS.md). The mock keeps working with nothing installed 
 the SDKs import lazily, so the v00 promise holds at every tag.
 
 **v02** taught it its job before giving it retrieval. The contract in
@@ -355,7 +355,7 @@ the whole series: 380 files → 2,221 chunks, $0.0096. The query is always
 embedded with the model the index was built with (recorded in the index) 
 vectors from different models live in different spaces, so chat provider and
 embedding stack are deliberately independent. Two notes for v04: models may
-normalize cited paths (`../MODELS.md` → `MODELS.md`), and ../CAPSTONE.md is
+normalize cited paths (`../docs/MODELS.md` → `MODELS.md`), and ../docs/CAPSTONE.md is
 *in* the corpus and names example eval questions; the golden set has to
 account for both.
 
