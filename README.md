@@ -1,9 +1,9 @@
 # askrepo: the deep-dive capstone
 
-Ask questions about a codebase in plain English, get answers **with `file:line`
-citations**. This is the capstone of the AI Engineering deep-dive series: one
-project built step by step, one deep dive per tag, whose default corpus is the
-series itself, so the course answers questions about the course.
+Ask questions about a codebase in plain English and get answers with `file:line`
+citations. This is the capstone of the AI Engineering deep-dive series: one project built
+step by step, one deep dive per tag, whose default corpus is the series itself. So the
+course answers questions about the course.
 
 The roadmap (every step, what it builds, and its definition of done) lives in
 [../docs/CAPSTONE.md](../docs/CAPSTONE.md). This README tracks what *exists*, tag by tag.
@@ -12,8 +12,8 @@ The roadmap (every step, what it builds, and its definition of done) lives in
 
 ## See it work
 
-Ask the course about itself: a plain-English answer with `(path:line)` citations
-that resolve to real files, plus what was retrieved and what the call cost:
+Ask the course about itself. You get a plain-English answer with `(path:line)` citations
+that resolve to real files, plus what was retrieved and what the call cost.
 
 ![askrepo answering questions about the series: retrieval scores, a cited answer, and the real per-call cost](assets/demo.gif)
 
@@ -31,10 +31,10 @@ retrieved: realtime-voice-deep-dive/README.md:130-146 (score 0.82)
 cost: $0.000322 (1868 in / 69 out)
 ```
 
-Every answer is grounded in retrieved chunks and cites the lines it used; ask
-something outside the corpus and it declines rather than guessing. The entire
-offline path (CLI, provider plumbing, the test suite) runs with **no key and
-no network** on a built-in mock, so you can try it in one command for `$0`:
+Every answer is grounded in retrieved chunks and cites the lines it used. Ask something
+outside the corpus and it declines rather than guessing. The whole offline path, meaning the
+CLI, the provider plumbing, and the test suite, runs with no key and no network on a
+built-in mock, so you can try it in one command for `$0`.
 
 ```console
 $ python -m askrepo ask "hello"          # PROVIDER=mock, no key, no network
@@ -56,9 +56,9 @@ python check_setup.py              # verifies your environment; makes no API cal
 python -m askrepo ask "hello"      # canned answer from the mock provider
 ```
 
-For a real model, `pip install -r requirements.txt`, then `cp .env.example
-.env` and set `PROVIDER=openai` or `PROVIDER=claude`. Your API key never goes
-in `.env`, via keychain + `secrun`, per [../docs/SECRETS.md](../docs/SECRETS.md):
+For a real model, run `pip install -r requirements.txt`, then `cp .env.example .env` and
+set `PROVIDER=openai` or `PROVIDER=claude`. Your API key never goes in `.env`. It comes from
+the keychain through `secrun`, per [../docs/SECRETS.md](../docs/SECRETS.md).
 
 ```bash
 secrun python -m askrepo index ..      # embed the series (~$0.01, once)
@@ -96,9 +96,9 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 
 ## Extensions
 
-The core (v00–v07) was a sequence; these are a set. Each is a feature branch
-merged to `main` with `--no-ff` and tagged `ext-*`: unordered add-ons from
-[../docs/CAPSTONE.md](../docs/CAPSTONE.md)'s branch-off table, not next steps.
+The core, v00 through v07, was a sequence. These are a set. Each one is a feature branch
+merged to `main` with `--no-ff` and tagged `ext-*`. Unordered add-ons from
+[../docs/CAPSTONE.md](../docs/CAPSTONE.md)'s branch-off table, rather than next steps.
 
 | Tag | Dive exercised | Status | What it adds |
 |-----|----------------|--------|--------------|
@@ -109,16 +109,14 @@ merged to `main` with `--no-ff` and tagged `ext-*`: unordered add-ons from
 
 ### ext-mcp: the course as a tool server
 
-[`askrepo/mcp_server.py`](askrepo/mcp_server.py) puts the whole pipeline
-behind the protocol the MCP dive teaches: `search` returns line-numbered,
-citation-ready chunks for the *host's* model to read; `ask` returns one
-finished, cited answer. [`.mcp.json`](.mcp.json) wires it into Claude Code 
-open this repo there and ask "which dive covers barge-in?" to close the meta
-loop. One launch wrinkle worth knowing: MCP hosts spawn servers without your
-shell, so the zsh `secrun` *function* doesn't exist there 
-[`secrun.sh`](secrun.sh) is the same keychain injection as a script, and it
-must be the server *command* itself, because MCP clients hand servers a
-restricted environment rather than inheriting yours.
+[`askrepo/mcp_server.py`](askrepo/mcp_server.py) puts the whole pipeline behind the protocol
+the MCP dive teaches. `search` returns line-numbered, citation-ready chunks for the host's
+model to read. `ask` returns one finished, cited answer. [`.mcp.json`](.mcp.json) wires it
+into Claude Code, so you can open this repo there and ask "which dive covers barge-in?" to
+close the loop. One launch wrinkle is worth knowing. MCP hosts spawn servers without your
+shell, so the zsh `secrun` function does not exist there. [`secrun.sh`](secrun.sh) is the
+same keychain injection as a script, and it has to be the server command itself, because
+MCP clients hand servers a restricted environment rather than inheriting yours.
 
 Two earlier steps carry over on purpose. **v06:** an MCP answer is delivered
 into another agent's context, exactly the injection channel the red-team
@@ -132,11 +130,11 @@ process and $0 from the next.
 
 ### ext-harness: the structural fix v06 pointed at
 
-v06's verdict was that agent mode's file tools are the attack surface (the
-injection rides in on `read_file`) and that its defenses were *advisory*: a
-system-prompt notice and an output check, both of which a task-aligned
-injection can talk the model past. [`askrepo/harness.py`](askrepo/harness.py)
-is the structural answer: rules enforced in code the model never sees:
+v06's verdict was that agent mode's file tools are where the attack lands, since the
+injection rides in on `read_file`, and that its defenses were advisory: a system-prompt
+notice and an output check, both of which a task-aligned injection can talk the model past.
+[`askrepo/harness.py`](askrepo/harness.py) is the structural answer, with rules enforced in
+code the model never sees.
 
 - **A permission policy** ([`PermissionPolicy`](askrepo/harness.py)): deny by
   default, allowing only `grep`, `read_file`, `list_dir`. A tool nobody
@@ -212,11 +210,11 @@ whole thesis: bounded window, preserved facts. Watch it with `chat
 --show-context`; runs offline on the mock (conversation + compaction, no
 retrieval).
 
-Honest scope: this is grounded Q&A *with memory*, not a general chatbot. The
-v02 contract still governs every answer: tell it "remember X" and it may reply
-`Not in this corpus.` because that's not a corpus question, even as the
-statement is kept in the thread and recalled later. The memory is
-conversational context for follow-ups, not a general assistant's compliance.
+Honest scope. This is grounded Q&A with memory rather than a general chatbot. The v02
+contract still governs every answer, so tell it "remember X" and it may reply
+`Not in this corpus.` because that is not a corpus question, even while the statement stays
+in the thread and gets recalled later. The memory is conversational context for follow-ups.
+It is not a general assistant's compliance.
 
 ### ext-local: index a private repo without sending a byte out
 
@@ -468,30 +466,30 @@ What each attack showed, honestly:
 [`askrepo/ops.py`](askrepo/ops.py), adapting all four of the production
 dive's modules (cache, cost, reliability, observability):
 
-- **Cache**: a repeated question is a visible cache hit at `$0.000000`. The
+- **Cache.** A repeated question is a visible cache hit at `$0.000000`. The
   one adaptation the server-oriented dive doesn't need: the cache is
   *disk-backed*, because a CLI is one question per process: an in-memory
   cache would never hit across invocations. The key hashes everything that
   shapes the answer (model, prompt-contract version, mode, k, blend,
   question), so any change busts it rather than serving stale.
-- **Budget**: a per-session USD ceiling that refuses instead of overspending.
-  It's most honest in a real session: `run_evals.py --budget 0.002` stops
-  the run after 5 questions with `budget stop ... would be exceeded`, rather
-  than quietly finishing the bill. (A single CLI ask can't pre-judge its
-  first call without a cost estimate, so the budget is genuinely
-  session-scoped, stated plainly rather than faked with a guessed estimate.)
-- **Retries**: `with_retry` wraps the embedding call (one clean request, the
+- **Budget.** A per-session USD ceiling that refuses instead of overspending.
+  It shows its worth in a real session. `run_evals.py --budget 0.002` stops the run after
+  5 questions with `budget stop ... would be exceeded`, rather than running the bill up to
+  the end and telling you afterwards. A single CLI ask cannot pre-judge its first call
+  without a cost estimate, so the budget is genuinely session-scoped, stated plainly rather
+  than faked with a guessed estimate.
+- **Retries.** `with_retry` wraps the embedding call (one clean request, the
   ideal retry target) with exponential backoff + jitter, retrying only
   transient failures (rate limits, timeouts, 5xx) and never a 400 that's your
   own bug. The provider SDKs add their own retry layer on top.
-- **Traces**: `ASKREPO_LOG=info` emits one JSON line per request (trace_id,
+- **Traces.** `ASKREPO_LOG=info` emits one JSON line per request (trace_id,
   timed spans, tokens, cost, cache hit/miss) that reconstructs the request
   after the fact; off by default so normal output stays clean.
 
-And the point of the whole layer: **the [test suite](tests/) runs entirely on
-the mock** (cache, budget, retries, guardrails, chunkers, prompt assembly, and
-the offline CLI path) with no key and no network. `python -m unittest discover
--s tests`. CI never needs a secret.
+And here is the point of the whole layer. The [test suite](tests/) runs entirely on the
+mock, covering cache, budget, retries, guardrails, chunkers, prompt assembly, and the
+offline CLI path, with no key and no network. `python -m unittest discover -s tests`. CI
+never needs a secret.
 
 v07 froze at 26 tests; the extensions took it to **71, in under a second**. Of
 those, the 8 MCP tests skip unless the MCP SDK is installed, so a clone with
