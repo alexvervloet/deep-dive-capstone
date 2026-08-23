@@ -74,7 +74,7 @@ clearly better" **did not hold**, and the reasons are the honest lesson:
    noise (~±0.02) of the cloud baseline's 0.771: a tie, not the +0.072 the
    *smaller* 8b posted. On this corpus, both local configs land in the same
    0.77–0.84 band as cloud. Model size wasn't the deciding variable; "local
-   matches cloud on correctness" is the robust finding across all three.
+   matches cloud on correctness" is the finding that survives all three.
 
 2. **The weak link was the embedder, not the answerer.** The 35B is the only
    run whose retrieval hit@k dropped (0.829 vs 0.886 for both nomic and OpenAI).
