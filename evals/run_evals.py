@@ -160,7 +160,7 @@ def run(args):
 
     # A per-session spend ceiling (v07). The eval loop is a real session 
     # 40 calls in one process, so a runaway or a too-low ceiling stops the
-    # run instead of quietly running up the bill.
+    # run instead of running the bill up to the end.
     budget = Budget(args.budget)
 
     results = []
