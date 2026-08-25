@@ -432,6 +432,13 @@ def corpus_drift(baseline_manifest, current):
     removed = sorted(set(was) - set(now))
     moved = sorted(r for r in set(was) & set(now) if was[r] != now[r])
     unchanged = sorted(r for r in set(was) & set(now) if was[r] == now[r])
+
+    # Clone the capstone on its own and none of the sibling dives are there.
+    # That is not sixteen repos being deleted, it is a corpus that was never
+    # checked out, and reporting it as drift would be a false alarm of the
+    # exact kind this module exists to avoid. Absent evidence is not evidence.
+    absent = bool(was) and not (set(was) & set(now)) - {".", "deep-dive-capstone (tool)"}
+
     return {
         "pinned": len(was),
         "now": len(now),
@@ -439,9 +446,10 @@ def corpus_drift(baseline_manifest, current):
         "removed": removed,
         "moved": moved,
         "unchanged": unchanged,
+        "absent": absent,
         # Any move at all means the measured corpus is gone. The count is for
         # how far gone, not whether.
-        "stale": bool(added or removed or moved),
+        "stale": bool(not absent and (added or removed or moved)),
     }
 
 
@@ -482,22 +490,31 @@ def report(corpus_root, log_path=None, metric_set=None):
         lines.append(f"  baseline frozen  {runs[0]['created']} ({runs[0]['name']})")
         lines.append(f"  repos pinned     {drift['pinned']}")
         lines.append(f"  repos now        {drift['now']}")
-        if drift["added"]:
-            label = f"added ({len(drift['added'])})"
-            lines.append(f"  {label:<16} "
-                         + ", ".join(drift["added"][:4])
-                         + (", ..." if len(drift["added"]) > 4 else ""))
-        if drift["removed"]:
-            label = f"removed ({len(drift['removed'])})"
-            lines.append(f"  {label:<16} " + ", ".join(drift["removed"]))
-        lines.append(f"  moved            {len(drift['moved'])} of "
-                     f"{len(drift['moved']) + len(drift['unchanged'])} still-present repos")
-        if drift["stale"]:
-            lines.append("  verdict          STALE. The baseline's numbers were measured "
-                         "on a corpus that no longer exists.")
-            lines.append("                   Re-freeze before comparing a new run to it.")
+        if drift["absent"]:
+            lines.append(f"  verdict          not checked out at {corpus_root}, so the "
+                         "baseline cannot be checked.")
+            lines.append("                   The corpus is the surrounding series: clone "
+                         "it with --recursive,")
+            lines.append("                   or point --corpus at it.")
         else:
-            lines.append("  verdict          current")
+            if drift["added"]:
+                label = f"added ({len(drift['added'])})"
+                lines.append(f"  {label:<16} "
+                             + ", ".join(drift["added"][:4])
+                             + (", ..." if len(drift["added"]) > 4 else ""))
+            if drift["removed"]:
+                label = f"removed ({len(drift['removed'])})"
+                lines.append(f"  {label:<16} " + ", ".join(drift["removed"]))
+            lines.append(f"  moved            {len(drift['moved'])} of "
+                         f"{len(drift['moved']) + len(drift['unchanged'])} "
+                         "still-present repos")
+            if drift["stale"]:
+                lines.append("  verdict          STALE. The baseline's numbers were "
+                             "measured on a corpus that no longer exists.")
+                lines.append("                   Re-freeze before comparing a new run "
+                             "to it.")
+            else:
+                lines.append("  verdict          current")
 
     # --- runs
     lines.append("")

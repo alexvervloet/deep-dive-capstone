@@ -296,6 +296,28 @@ class TestCorpusDrift(unittest.TestCase):
         repos = [r["repo"] for r in current_manifest(root)]
         self.assertIn("rag-deep-dive", repos)
 
+    def test_a_corpus_that_was_never_cloned_is_not_drift(self):
+        # Clone the capstone on its own and none of the sibling dives exist.
+        # Calling that "16 repos removed, baseline STALE" is a false alarm from
+        # a tool whose entire job is not raising false alarms.
+        was = [{"repo": ".", "sha": "aaa"},
+               {"repo": "rag-deep-dive", "sha": "bbb"},
+               {"repo": "deep-dive-capstone (tool)", "sha": "ccc"}]
+        now = [{"repo": "deep-dive-capstone (tool)", "sha": "ddd"}]
+        drift = corpus_drift(was, now)
+        self.assertTrue(drift["absent"])
+        self.assertFalse(drift["stale"])
+
+    def test_a_real_corpus_with_one_moved_repo_is_still_drift(self):
+        # The guard above must not swallow the case it sits next to.
+        was = [{"repo": "rag-deep-dive", "sha": "aaa"},
+               {"repo": "deep-dive-capstone (tool)", "sha": "ccc"}]
+        now = [{"repo": "rag-deep-dive", "sha": "bbb"},
+               {"repo": "deep-dive-capstone (tool)", "sha": "ccc"}]
+        drift = corpus_drift(was, now)
+        self.assertFalse(drift["absent"])
+        self.assertTrue(drift["stale"])
+
     def test_an_untouched_corpus_is_not_stale(self):
         same = [{"repo": "rag-deep-dive", "sha": "aaa"}]
         drift = corpus_drift(same, list(same))
