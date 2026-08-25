@@ -194,13 +194,21 @@ def log(level, event, **fields):
 
 
 class Trace:
-    """One request's record: a trace_id, timed spans, and attributes."""
+    """One request's record: a trace_id, timed spans, and attributes.
+
+    `ext-observability` added `duration_ms`. v07 timed each span but never the
+    request, and the spans do not sum to it: cache lookups, provider
+    construction, and printing all fall between them. Latency you monitor has
+    to be the number the user felt, so it gets measured at the boundary rather
+    than added up from the parts.
+    """
 
     def __init__(self, name):
         self.trace_id = uuid.uuid4().hex[:12]
         self.name = name
         self.attributes = {}
         self.spans = {}
+        self._started = time.perf_counter()
 
     def set(self, **attrs):
         self.attributes.update(attrs)
@@ -215,7 +223,9 @@ class Trace:
 
     def summary(self):
         return {"trace_id": self.trace_id, "request": self.name,
-                **self.attributes, "spans": self.spans}
+                **self.attributes,
+                "duration_ms": round((time.perf_counter() - self._started) * 1000, 1),
+                "spans": self.spans}
 
 
 @contextmanager

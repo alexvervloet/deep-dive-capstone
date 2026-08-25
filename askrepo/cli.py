@@ -18,8 +18,28 @@ import os
 import sys
 
 from askrepo.config import load_config
-from askrepo.prompts import build_messages, format_context
+from askrepo.prompts import DECLINE_PHRASE, build_messages, format_context
 from askrepo.providers import cost_usd, get_provider
+
+
+def _outcome(text):
+    """Classify a finished answer the way the log has to see it.
+
+    The Observability dive buckets every request as answered / refused /
+    blocked / error, because a refusal rate that climbs is the cheapest early
+    warning you get from logs alone. askrepo's v02 contract already makes the
+    distinction visible in the text, so this reads it rather than guessing.
+
+    `blocked` is set by the budget ceiling in cmd_ask, not here. Note what that
+    leaves out: the guardrail sanitizer only runs on the MCP path
+    (askrepo/mcp_server.py), so a CLI request is never blocked for a poisoned
+    answer. A category that cannot fire is worth knowing about before you build
+    an alert on it.
+    """
+    return {
+        "outcome": "refused" if DECLINE_PHRASE in text else "answered",
+        "answer_chars": len(text),
+    }
 
 
 def _produce(args, config, provider, trace):
@@ -141,14 +161,24 @@ def cmd_ask(args):
     budget = Budget(float(config["BUDGET"]))
 
     with start_trace("ask") as trace:
-        trace.set(question=args.question, cache_key=key)
+        # Identity first, before any exit can be taken. ext-observability found
+        # v07 set these deep in _produce, so the two early returns below logged
+        # a request with no model and no provider on it. A dashboard cannot
+        # attribute a cache hit or a budget block it cannot identify.
+        trace.set(
+            question=args.question,
+            cache_key=key,
+            provider=provider.name,
+            model=provider.model,
+            prompt_version=CONTRACT_VERSION,
+        )
         if not args.no_cache:
             cached = cache.get(key)
             if cached is not None:
                 print(f"provider: {provider.name} (cache hit)", file=sys.stderr)
                 print(cached, flush=True)
                 print("cost: $0.000000 (served from cache)", file=sys.stderr)
-                trace.set(cache="hit", cost_usd=0.0)
+                trace.set(cache="hit", cost_usd=0.0, **_outcome(cached))
                 return 0
         trace.set(cache="miss")
 
@@ -156,9 +186,11 @@ def cmd_ask(args):
             budget.check()  # refuse to start a call once the ceiling is hit
         except BudgetExceeded as e:
             print(f"budget: {e}", file=sys.stderr)
+            trace.set(outcome="blocked", answer_chars=0)
             return 2
 
         text, cost = _produce(args, config, provider, trace)
+        trace.set(**_outcome(text))
         budget.record(cost)
         if not args.no_cache and provider.name != "mock" and text.strip():
             cache.set(key, text)
@@ -185,6 +217,20 @@ def cmd_redteam(args):
     import redteam  # type: ignore[import-not-found]  # resolved via the sys.path insert above
 
     return redteam.run(args.freeze)
+
+
+def cmd_watch(args):
+    """Trend askrepo's own history (ext-observability).
+
+    Reads files this repo already has, so it needs no key, no network, and no
+    model. It also makes no eval call of its own: watching quality and
+    measuring it are separate jobs, and a watcher that runs the eval to fill
+    its own chart is a watcher you will turn off when it costs money.
+    """
+    from askrepo.watch import report
+
+    print(report(args.corpus, log_path=args.log))
+    return 0
 
 
 def cmd_chat(args):
@@ -340,6 +386,22 @@ def main(argv=None):
         help="print the per-turn window accounting (chunks kept/evicted, compactions)",
     )
     chat.set_defaults(func=cmd_chat)
+
+    watch = subparsers.add_parser(
+        "watch",
+        help="trend askrepo's own quality over time (ext-observability)",
+    )
+    watch.add_argument(
+        "--corpus",
+        default="..",
+        help="corpus root to compare the baseline's pinned SHAs against",
+    )
+    watch.add_argument(
+        "--log",
+        default=None,
+        help="a file of ASKREPO_LOG=info output to summarize alongside the runs",
+    )
+    watch.set_defaults(func=cmd_watch)
 
     args = parser.parse_args(argv)
     return args.func(args)
