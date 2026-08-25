@@ -17,18 +17,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from askrepo.watch import (  # noqa: E402
     LOG_FIELDS, baseline_stats, comparable, compare_configs, corpus_drift,
-    detect, load_runs, missing_fields, noise_floor, read_traces, report,
-    series, signed_z,
+    detect, judge_of, load_runs, missing_fields, noise_floor, read_traces,
+    report, same_judge, series, signed_z,
 )
 
 
-def _run(created, mode, model, n=40, **metrics):
+def _run(created, mode, model, n=40, judge="openai/gpt-4o-mini", **metrics):
     """One eval run in the shape load_runs returns."""
     return {
         "name": f"{created}.run.json",
         "created": created,
         "mode": mode,
         "model": model,
+        "judge": judge,
         "n_questions": n,
         "config": f"{mode}/{model}",
         "metrics": {"n_questions": n, **metrics},
@@ -121,6 +122,38 @@ class TestRunHistory(unittest.TestCase):
             _run("2026-07-03T11:00:00", "rag", "gpt", decline_accuracy=None),
         ]
         self.assertEqual(series(runs, "decline_accuracy"), [1.0])
+
+
+class TestJudge(unittest.TestCase):
+    def test_a_missing_judge_field_means_the_answerer_graded_itself(self):
+        # Runs predating ext-local's JUDGE_PROVIDER carry no judge field, and
+        # run_evals defaulted the judge to the answering provider. Reading that
+        # off the run is recovering what the code did, not guessing.
+        self.assertEqual(
+            judge_of({"provider": "openai", "model": "gpt-4o-mini"}),
+            "openai/gpt-4o-mini",
+        )
+
+    def test_an_explicit_judge_wins(self):
+        self.assertEqual(
+            judge_of({"provider": "local", "model": "qwen3:8b",
+                      "judge_provider": "openai", "judge_model": "gpt-4o-mini"}),
+            "openai/gpt-4o-mini",
+        )
+
+    def test_a_differently_judged_run_is_dropped_not_flagged(self):
+        # The 35B model grading its own answers scored 0.771 where the constant
+        # gpt-4o-mini judge gave the same answers 0.786. Showing that row with
+        # a caveat still invites the comparison; it has to be absent.
+        runs = [
+            _run("2026-07-03T10:00:00", "rag", "gpt", judged_correctness=0.786),
+            _run("2026-07-03T11:00:00", "rag", "gpt", judged_correctness=0.771),
+            _run("2026-07-06T09:00:00", "rag", "qwen", judge="local/qwen",
+                 judged_correctness=0.771),
+        ]
+        main, _, _ = comparable(runs)
+        self.assertEqual(compare_configs(runs, main, "judged_correctness"), [])
+        self.assertEqual(len(same_judge(runs, main)), 2)
 
 
 class TestDetectors(unittest.TestCase):

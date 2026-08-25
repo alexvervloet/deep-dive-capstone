@@ -133,16 +133,30 @@ def missing_fields(records):
 # 2. The eval run history
 # --------------------------------------------------------------------------
 
-def load_runs(runs_dir=RUNS_DIR, baseline=BASELINE):
-    """Every recorded eval run, oldest first, with its config attached.
+def judge_of(data):
+    """Which model graded this run.
 
-    The baseline is a run like any other; it is only special because a later
-    run gets compared against it. Including it here is what lets the noise
-    floor below be measured at all, since it and the run 76 seconds after it
-    are the only pair this repo has with an identical config.
+    Runs written before ext-local added `JUDGE_PROVIDER` carry no judge field.
+    They are not unknown: `run_evals.py` defaulted the judge to the answering
+    provider, so for those runs the judge is the model in the run itself. That
+    is reading what the code did, not guessing.
+    """
+    if data.get("judge_model"):
+        return f"{data.get('judge_provider', '?')}/{data['judge_model']}"
+    return f"{data.get('provider', '?')}/{data.get('model', '?')}"
+
+
+def load_runs(runs_dir=RUNS_DIR, baseline=BASELINE):
+    """Every recorded eval run, oldest first, with its config and judge.
+
+    Reads `evals/runs/` *and* the loose `*.run.json` files beside it. That is
+    not tidiness: `local-35b.run.json` lives at the evals root and is the only
+    correctly-judged record of the 35B run, so a loader that globbed one
+    directory would have silently used the wrong one.
     """
     paths = sorted(glob.glob(os.path.join(runs_dir, "*.json")))
-    if baseline and os.path.exists(baseline):
+    paths += sorted(glob.glob(os.path.join(os.path.dirname(runs_dir), "*.run.json")))
+    if baseline and os.path.exists(baseline) and baseline not in paths:
         paths.append(baseline)
 
     runs = []
@@ -151,15 +165,21 @@ def load_runs(runs_dir=RUNS_DIR, baseline=BASELINE):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
         metrics = data.get("metrics", {})
-        key = (data.get("created"), data.get("mode"), data.get("model"))
+        judge = judge_of(data)
+        # The judge is part of a run's identity. Two files can hold the same
+        # answers scored by two different graders, which is two measurements,
+        # not a duplicate: that is exactly what local-35b.run.json and
+        # runs/20260706-091612-rag.run.json are.
+        key = (data.get("created"), data.get("mode"), data.get("model"), judge)
         if key in seen:
-            continue  # baseline.run.json is a copy of one of the run files
+            continue  # baseline.run.json really is a copy of one of the runs
         seen.add(key)
         runs.append({
             "name": os.path.basename(path),
             "created": data.get("created", ""),
             "mode": data.get("mode", "?"),
             "model": data.get("model", "?"),
+            "judge": judge,
             "n_questions": metrics.get("n_questions", 0),
             "config": f"{data.get('mode', '?')}/{data.get('model', '?')}",
             "metrics": metrics,
@@ -172,13 +192,19 @@ def load_runs(runs_dir=RUNS_DIR, baseline=BASELINE):
 def comparable(runs):
     """Split runs into the ones you may trend and the ones you may not.
 
-    Two rules, both learned the boring way from this repo's own history:
+    Three rules, all learned the boring way from this repo's own history:
 
     * A run over 5 questions is not a smaller version of a run over 40, it is a
       different measurement. `20260704-080140` is a 5-question spot check that
       sits in the same directory as the real runs and looks exactly like them.
     * A run whose config differs is a different experiment. Trending `qwen3:8b`
       against `gpt-4o-mini` produces a "regression" that is just a model swap.
+    * A run graded by a different judge is not comparable to anything. ext-local
+      already says this in prose: the judge is measurement infrastructure, not
+      the system under test. `runs/20260706-091612-rag.run.json` has the 35B
+      model grading its own answers and scores itself 0.771 where the constant
+      gpt-4o-mini judge gave the same answers 0.786. Comparing that against a
+      gpt-4o-mini-judged baseline measures the graders, not the systems.
 
     The full-size runs of the most-used config are the trendable set; the rest
     are returned so the report can say what it set aside rather than silently
@@ -194,6 +220,14 @@ def comparable(runs):
     main = max(by_config.values(), key=len)
     others = [r for r in full if r not in main]
     return main, partial + others, by_config
+
+
+def same_judge(runs, reference):
+    """Only the runs a reference run may legitimately be compared against."""
+    if not reference:
+        return []
+    judge = reference[0]["judge"]
+    return [r for r in runs if r["judge"] == judge]
 
 
 def series(runs, metric):
@@ -337,7 +371,10 @@ def compare_configs(runs, reference, metric):
     ref_center = statistics.fmean(ref_values)
 
     by_config = {}
-    for run in runs:
+    # Cross-judge runs are dropped here, not flagged. A row saying "unknown"
+    # still invites the reader to compare the numbers on it; the only safe
+    # rendering of a measurement taken with a different instrument is absence.
+    for run in same_judge(runs, reference):
         by_config.setdefault(run["config"], []).append(run)
 
     out = []
@@ -476,9 +513,14 @@ def report(corpus_root, log_path=None, metric_set=None):
         return "\n".join(lines)
 
     lines.append(f"  trendable        {len(main)} of config {main[0]['config']}")
+    lines.append(f"  judged by        {main[0]['judge']}")
     for run in aside:
-        why = ("partial run, n=%d" % run["n_questions"]
-               if run["n_questions"] < 40 else "different config")
+        if run["n_questions"] < 40:
+            why = "partial run, n=%d" % run["n_questions"]
+        elif run["judge"] != main[0]["judge"]:
+            why = f"judged by {run['judge']}, not comparable"
+        else:
+            why = "different config"
         lines.append(f"  set aside        {run['name']}  ({why})")
 
     # --- noise floor
