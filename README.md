@@ -106,6 +106,7 @@ merged to `main` with `--no-ff` and tagged `ext-*`. Unordered add-ons from
 | `ext-harness` | Agent Harnesses | **done** | permission policy + read-only sandbox + audit around agent mode's file tools; the structural fix for v06's residual |
 | `ext-context` | Context Engineering | **done** | `askrepo chat`: multi-turn grounded conversation that budgets the window across accumulating chunks and compacted turns |
 | `ext-local` | Local Models | **done** | Ollama backend for answers + embeddings; index a private repo without sending a byte out; the measured quality gap vs cloud |
+| `ext-observability` | Observability | **done** | `askrepo watch`: the noise floor under this repo's own eval numbers, the corpus drifting out from under a frozen baseline, and which published comparisons survive both |
 
 ### ext-mcp: the course as a tool server
 
@@ -299,6 +300,122 @@ the strong answerer, so on a local RAG stack, upgrade the embedding model
 before the generator. Every citation it emitted resolved (a perfect 1.000), and
 latency was the real tax: **36.7s/question** vs cloud's 2.7s, a big thinking
 model reasoning before each answer on one consumer GPU.
+
+### ext-observability: how much does this number move on its own?
+
+Every other step here produced a number. v04 froze a baseline, v05 compared RAG
+against the agent, ext-local compared a local model against the cloud. None of
+them asked the question the Observability dive is built around: how much does
+that number move when nothing changes, and is the baseline it is measured
+against still valid?
+
+The port hit an obstacle worth stating plainly. **askrepo is a CLI, not a
+service.** The dive watches six weeks of a running system's request traffic;
+nobody runs askrepo continuously, and manufacturing synthetic traffic would only
+re-teach the simulator that dive already ships. What askrepo genuinely
+accumulates is different: eval runs, a corpus that keeps moving under a frozen
+baseline, and traces from whatever you happen to run. So
+[`askrepo/watch.py`](askrepo/watch.py) trends those. `python -m askrepo watch`
+needs no key, no network, and no model, and makes no eval call of its own.
+
+**The corpus went stale, and the baseline never noticed.**
+
+```console
+$ python -m askrepo watch
+corpus
+  baseline frozen  2026-07-03T21:30:43 (20260703-213043.run.json)
+  repos pinned     17
+  repos now        26
+  added (9)        ai-data-engineering-deep-dive, architecture-deep-dive, ...
+  moved            17 of 17 still-present repos
+  verdict          STALE. The baseline's numbers were measured on a corpus that no longer exists.
+                   Re-freeze before comparing a new run to it.
+```
+
+v04 stamped a corpus manifest into every run so the numbers would be
+reproducible against any corpus rather than only this one. That bought a second
+thing nobody planned for: the baseline's staleness became *measurable*. Nine
+repos joined the series since July and all seventeen pinned ones moved, so
+`baseline.run.json` describes a corpus that no longer exists. Nothing was
+broken. Nothing turned red. The file just quietly stopped meaning what it says,
+which is the dive's whole thesis about how quality rots.
+
+**The noise floor, measured for free.**
+
+Two of the recorded runs share a config and sit 76 seconds apart. Nothing
+changed between them, so the gap between them is pure measurement noise, and
+that is the smallest difference this repo is entitled to call a finding:
+
+| metric | noise floor |
+|---|---|
+| `hit_at_k` | 0.000 |
+| `judged_correctness` | 0.015 |
+| `citation_resolve` | 0.020 |
+| `citation_match` | 0.063 |
+
+`hit@k` has no noise at all because retrieval is deterministic; only the
+generated text wobbles. So a one-point drop in `hit@k` is real and a
+five-point drop in `citation_match` is nothing, and there is no way to know
+that from a single run of either.
+
+**Then it invalidated one of this repo's own published rows.**
+[`evals/comparison.md`](evals/comparison.md) put RAG's citation match (0.721)
+next to the agent's (0.705). That gap is 0.016 against a floor of 0.063, so the
+row is noise presented as a comparison. It gets worse: the *other* rag run of
+the same config scored 0.784, which would have made the same row read as a real
+0.079 gap. Two interchangeable runs, opposite conclusions, decided by which file
+got opened. The headline verdict survives untouched (correctness is 0.114 apart
+against a 0.015 floor), but one of its supporting rows never should have been
+read as a difference.
+
+**And the judge turned out not to be constant.** ext-local states the rule: the
+judge is measurement infrastructure, not the system under test, so it must stay
+fixed across runs you compare. Two files hold the same 35B run, one graded by
+the constant `gpt-4o-mini` (0.786) and one where the 35B model graded itself
+(0.771), and only the second is in `evals/runs/`. The watcher now treats the
+judge as part of a run's identity and drops cross-judge runs from comparisons
+rather than annotating them, because a caveat still leaves two numbers side by
+side for someone to subtract. With the right file, the 35B model lands +0.008
+from cloud, confirming the "tie within judge noise" that section claimed in
+prose.
+
+**What it does not do.** No alerting fires, and the report says so in those
+words rather than printing "all clear":
+
+```
+  alerts on the latest run
+    none. 2 run(s) of rag/gpt-4o-mini is below the 3 a trend needs,
+    so this says 'cannot tell', not 'all clear'.
+```
+
+Two comparable runs is not a trend. The detectors are built and tested
+([`tests/test_watch.py`](tests/test_watch.py)) and they stay quiet, which is the
+honest output for this much history. Building them found two bugs that would
+have made them quiet for bad reasons instead: a flat metric produced a z-score
+of 0 and went blind to a 100x cost spike, and the noise floor was measured over
+the very run being judged, so a spike widened the threshold to exactly cover
+itself. Both are in [LESSONS.md](LESSONS.md).
+
+**The trace adapter.** The dive says its record shape is deliberately the same
+one Production's `trace.summary()` emits, and v07's ops layer came from that
+dive, so the logs should have loaded straight in. Six required fields were
+missing: `prompt_version`, `model`, `provider`, `duration_ms`, `outcome`, and
+`answer_chars`. v07 timed every span but never the request, and set the provider
+deep inside `_produce`, so a cache hit and a budget block both logged a request
+with no model attached. Those got fixed in
+[`askrepo/ops.py`](askrepo/ops.py) and [`askrepo/cli.py`](askrepo/cli.py) rather
+than defaulted in the adapter, because an adapter that fills in a missing field
+is how a dashboard ends up confidently reporting a number nobody measured.
+`watch.missing_fields()` re-runs that check in one line.
+
+```bash
+ASKREPO_LOG=info python -m askrepo ask "which dive covers barge-in?" 2> run.jsonl
+python -m askrepo watch --log run.jsonl
+```
+
+`feedback`, `segment`, and the answer text stay absent on purpose. A CLI has no
+thumbs-up button, one user is not a cohort, and keeping answer text would turn
+the log into a PII sink for whatever repo you pointed askrepo at.
 
 ## What exists so far
 
