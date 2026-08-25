@@ -51,6 +51,34 @@ missing field is how a dashboard ends up confidently reporting a number nobody
 ever measured. `watch.missing_fields()` exists so the next person can re-run
 that check in one line instead of rediscovering it.
 
+## 2026-08-25: The evidence for the whole feature was gitignored
+
+**Expected.** Merge the extension, done. The README quotes the measured noise
+floor, and anyone who clones the repo can run `askrepo watch` and see it.
+
+**What happened.** Cloning the repo into a temp directory to check what CI would
+do turned up that `evals/runs/` was in `.gitignore`, with the comment "eval runs
+are outputs, except the frozen baseline, which IS committed". So a cloner got
+two runs of different configs, no pair, no noise floor, and a README documenting
+a number their checkout could not produce. The centerpiece of the extension
+existed on exactly one machine.
+
+The rule was right when it was written. A run *was* just an output. What changed
+is that two runs of an unchanged config turned out to be the only measurement of
+the noise floor, which makes them the most valuable files in the directory, and
+the rule was quietly throwing them away. 208K of them.
+
+The same clone also showed the corpus check reporting "16 repos removed, STALE"
+when the truth was that the sibling dives were never cloned. Absent evidence
+rendered as evidence of change, in a tool whose entire job is not raising false
+alarms.
+
+**Next time.** Clone the repo before claiming the work is done. Every check up
+to that point ran in a working copy with six years of accumulated local state,
+and none of it would fail there. Also worth re-reading any `.gitignore` rule
+whose justification is a claim about what a file is *for*: "outputs, not source"
+was true and stopped being true, and nothing forces you to revisit it.
+
 ## 2026-08-25: Two files, one run, two different scores
 
 **Expected.** `evals/runs/` holds the runs. Glob it, sort by date, trend.
