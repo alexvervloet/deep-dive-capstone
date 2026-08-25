@@ -18,5 +18,9 @@ venv/
 # The built index and answer cache (regenerated; outputs, not source)
 index/
 
-# Eval runs are outputs, except the frozen baseline, which IS committed
-evals/runs/
+# Eval runs used to be ignored as mere outputs. ext-observability changed that:
+# two runs of an *unchanged* config are the only measurement of this repo's
+# noise floor, and the floor is what decides whether any published comparison
+# is a finding or a wobble. Throwing the runs away threw that away, and left
+# `askrepo watch` with nothing to trend for anyone who cloned the repo. They
+# are 200K of real measurements. They are committed.
