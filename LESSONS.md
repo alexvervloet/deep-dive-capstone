@@ -51,6 +51,31 @@ missing field is how a dashboard ends up confidently reporting a number nobody
 ever measured. `watch.missing_fields()` exists so the next person can re-run
 that check in one line instead of rediscovering it.
 
+## 2026-08-25: Two files, one run, two different scores
+
+**Expected.** `evals/runs/` holds the runs. Glob it, sort by date, trend.
+
+**What happened.** `evals/local-35b.run.json` sits at the evals root rather than
+in `runs/`, and `runs/20260706-091612-rag.run.json` has the same `created`
+timestamp and the same model. They are the same answers scored twice: once by
+the constant `gpt-4o-mini` judge (0.786) and once by the 35B model grading
+itself (0.771). A loader that globbed one directory silently picked the
+self-judged one, and the first working version of the cross-config table
+compared a qwen-judged score against a gpt-4o-mini-judged baseline. That
+measures the graders.
+
+ext-local had already written the rule down in the README: the judge is
+measurement infrastructure, not the system under test, so it must stay constant
+across runs you compare. The rule was stated, then broken by a directory layout.
+
+**Next time.** A rule that lives only in prose gets broken by the next tool that
+reads the data. `watch.py` now treats the judge as part of a run's identity, and
+drops cross-judge runs from comparisons rather than showing them with a caveat,
+because a caveat still leaves two numbers side by side for someone to subtract.
+Runs from before the `JUDGE_PROVIDER` override carry no judge field at all;
+those are recoverable, since `run_evals.py` defaulted the judge to the answering
+provider, but only if you go read what the code did at the time.
+
 ## 2026-08-25: A CLI does not have production traffic
 
 **Expected.** ext-observability would watch askrepo's request stream the way the
