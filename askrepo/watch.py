@@ -271,24 +271,50 @@ def detect(runs, metric, direction, robust=True):
     gate is what stops this from paging you about a model having a bad
     afternoon.
     """
-    values = series(runs, metric)
-    if len(values) < 3:
+    # Split the runs, not the values: `series` drops runs whose metric is None,
+    # so slicing the two lists independently would eventually misalign them.
+    usable = [
+        r for r in runs
+        if isinstance(r["metrics"].get(metric), (int, float))
+    ]
+    if len(usable) < 3:
         return None  # a trend needs a history, not a pair
+    history_runs, values = usable[:-1], [r["metrics"][metric] for r in usable]
     *history, latest = values
     center, spread = baseline_stats(history, robust=robust)
     z = signed_z(latest, center, spread)
-    bad = z < 0 if direction == "down" else z > 0
-    floor = noise_floor(runs, metric)
-    delta = abs(latest - center)
+
+    # The floor comes from the history alone. Measured across all the runs it
+    # would include the very point being tested, so a single spike would widen
+    # the threshold to exactly cover itself and no spike could ever be caught.
+    # Same trap as a baseline recomputed over the incident it is meant to find.
+    floor = noise_floor(history_runs, metric)
+    delta = latest - center
+    moved = direction == "down" and delta < 0 or direction == "up" and delta > 0
+
+    # A perfectly flat history has zero spread, and dividing by it gives every
+    # deviation a z-score of 0. That is the worst failure an alerting system
+    # can have: the more stable a metric has been, the more thoroughly it goes
+    # blind the moment that metric breaks. A metric that has never moved has no
+    # z-score, so the size test falls back to the noise floor. Only when both
+    # are zero does the detector accept "any change at all" as the threshold,
+    # and by then it has genuinely never seen this number move.
+    flat = spread == 0.0
+    if flat:
+        big_enough = abs(delta) > floor if floor else abs(delta) > 0
+    else:
+        big_enough = abs(z) >= 2.0 and (floor is None or abs(delta) > floor)
+
     return {
         "metric": metric,
         "latest": latest,
         "center": center,
         "z": z,
-        "delta": delta,
+        "flat_history": flat,
+        "delta": abs(delta),
         "floor": floor,
-        "alert": bool(bad and abs(z) >= 2.0 and (floor is None or delta > floor)),
-        "under_floor": floor is not None and delta <= floor,
+        "alert": bool(moved and big_enough),
+        "under_floor": floor is not None and abs(delta) <= floor,
     }
 
 
