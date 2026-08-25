@@ -9,6 +9,7 @@ detector that stays quiet for the right reason is the whole feature.
 
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -17,8 +18,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from askrepo.watch import (  # noqa: E402
     LOG_FIELDS, baseline_stats, comparable, compare_configs, corpus_drift,
-    detect, judge_of, load_runs, missing_fields, noise_floor, read_traces,
-    report, same_judge, series, signed_z,
+    current_manifest, detect, judge_of, load_runs, missing_fields, noise_floor,
+    read_traces, report, same_judge, series, signed_z,
 )
 
 
@@ -279,6 +280,21 @@ class TestCorpusDrift(unittest.TestCase):
         self.assertEqual(drift["added"], ["architecture-deep-dive"])
         self.assertEqual(drift["moved"], [])
         self.assertTrue(drift["stale"])  # the corpus grew under the baseline
+
+    def test_a_submodule_checkout_still_counts_as_a_repo(self):
+        # In a `git clone --recursive` every submodule's `.git` is a FILE
+        # pointing into the superproject, not a directory. The manifest used to
+        # test isdir, so it saw no repos at all on any machine but the author's
+        # and the reproducibility it exists to provide quietly did not work.
+        root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, root, True)
+        submodule = os.path.join(root, "rag-deep-dive")
+        os.makedirs(submodule)
+        with open(os.path.join(submodule, ".git"), "w") as f:
+            f.write("gitdir: ../.git/modules/rag-deep-dive\n")
+
+        repos = [r["repo"] for r in current_manifest(root)]
+        self.assertIn("rag-deep-dive", repos)
 
     def test_an_untouched_corpus_is_not_stale(self):
         same = [{"repo": "rag-deep-dive", "sha": "aaa"}]

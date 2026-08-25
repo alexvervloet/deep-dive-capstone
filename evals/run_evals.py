@@ -77,12 +77,21 @@ def corpus_manifest(corpus_root):
         except subprocess.CalledProcessError:
             return None
 
+    # os.path.exists, not os.path.isdir: in a submodule checkout `.git` is a
+    # *file* pointing at the superproject's modules directory. The isdir test
+    # this used to do returned an almost-empty manifest for anyone who cloned
+    # the series with --recursive, which is everyone but the author, so the
+    # reproducibility the manifest exists to provide only worked on one
+    # machine. Found by ext-observability, which diffs this against a baseline.
+    def is_repo(path):
+        return os.path.exists(os.path.join(path, ".git"))
+
     manifest = []
-    if os.path.isdir(os.path.join(corpus_root, ".git")):
+    if is_repo(corpus_root):
         manifest.append({"repo": ".", "sha": sha(corpus_root)})
     for name in sorted(os.listdir(corpus_root)):
         path = os.path.join(corpus_root, name)
-        if os.path.isdir(os.path.join(path, ".git")) and not os.path.samefile(path, ROOT):
+        if is_repo(path) and not os.path.samefile(path, ROOT):
             manifest.append({"repo": name, "sha": sha(path)})
     manifest.append({"repo": "deep-dive-capstone (tool)", "sha": sha(ROOT)})
     return manifest
