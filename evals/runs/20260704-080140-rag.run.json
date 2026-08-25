@@ -1,0 +1,209 @@
+{
+ "created": "2026-07-04T08:01:40",
+ "mode": "rag",
+ "provider": "openai",
+ "model": "gpt-4o-mini",
+ "embed_model": "text-embedding-3-small",
+ "k": 5,
+ "blend": 0.7,
+ "corpus_manifest": [
+  {
+   "repo": ".",
+   "sha": "2f0f422cd6e540bc8aa1954402ed5d65f33ad25c"
+  },
+  {
+   "repo": "agent-harness-deep-dive",
+   "sha": "4bae0bd6f5be13c175a578647f94878e53d5f9fd"
+  },
+  {
+   "repo": "agents-deep-dive",
+   "sha": "f88aa4d04cadecc70ef1cf4e0f90116d061c35f5"
+  },
+  {
+   "repo": "ai-in-production-deep-dive",
+   "sha": "4a8ec93502b51584ac00e0de6df91d864360c366"
+  },
+  {
+   "repo": "claude-api-deep-dive",
+   "sha": "a6e97f376960534fafed0d52b93af8bc3e40e9d6"
+  },
+  {
+   "repo": "context-engineering-deep-dive",
+   "sha": "1ebfe43152b12642987b69a4b196f891d2fd6871"
+  },
+  {
+   "repo": "evals-deep-dive",
+   "sha": "b80e45323f814fdf1bdc9a1b2efc7ce416a97101"
+  },
+  {
+   "repo": "fine-tuning-deep-dive",
+   "sha": "e89da63d3341464528e8bd563349011f59c7ed46"
+  },
+  {
+   "repo": "local-models-deep-dive",
+   "sha": "ff5a455ebf79f4aed2d893d11d8c368d7f7f5a29"
+  },
+  {
+   "repo": "mcp-deep-dive",
+   "sha": "8706856cd4ca26578b5b3366ded900c7b9fe5736"
+  },
+  {
+   "repo": "multimodal-deep-dive",
+   "sha": "d6915b8004dd04ae756043be27f58716ec18184d"
+  },
+  {
+   "repo": "openai-api-deep-dive",
+   "sha": "129dc204ab3073628fcc77efad0ee49c7714fe76"
+  },
+  {
+   "repo": "prompt-engineering-deep-dive",
+   "sha": "702105c932a659dbb56ccb58e02b5d5d2ff52af5"
+  },
+  {
+   "repo": "prompt-injection-deep-dive",
+   "sha": "a7f3ea7cf991b6c9b8e4e1dbae716175749688c0"
+  },
+  {
+   "repo": "rag-deep-dive",
+   "sha": "8a6b519269188d22d7ad8108c29c14b650c1109d"
+  },
+  {
+   "repo": "realtime-voice-deep-dive",
+   "sha": "15d9a1dc2027f915aa6072006405ddfb94763194"
+  },
+  {
+   "repo": "deep-dive-capstone (tool)",
+   "sha": "d2a673fe7443b3224a80121075df9d07723b1882"
+  }
+ ],
+ "metrics": {
+  "hit_at_k": 1.0,
+  "citation_resolve": 0.833,
+  "citation_match": 0.667,
+  "judged_correctness": 0.7,
+  "decline_accuracy": null,
+  "mean_cost_usd": 0.000428,
+  "mean_latency_s": 3.36,
+  "n_questions": 5,
+  "citations_per_answer": 1.2,
+  "correctness_by_category": {
+   "locator": 0.7
+  }
+ },
+ "totals": {
+  "answer_cost_usd": 0.0021,
+  "judge_cost_usd": 0.0003
+ },
+ "questions": [
+  {
+   "id": "loc-01",
+   "category": "locator",
+   "retrieved": [
+    "realtime-voice-deep-dive/EXERCISES.md",
+    "realtime-voice-deep-dive/README.md",
+    "CAPSTONE.md",
+    "realtime-voice-deep-dive/examples/04_barge_in.py",
+    "README.md"
+   ],
+   "answer": "The deep dive that covers barge-in is **Realtime Voice** (README.md:52). Barge-in is a feature where the voice agent stops talking immediately when a user interrupts, discarding the rest of its planned audio and listening for the new input (realtime-voice-deep-dive/examples/04_barge_in.py:7-9).",
+   "cost_usd": 0.000401,
+   "latency_s": 5.74,
+   "hit": true,
+   "citations": {
+    "total": 2,
+    "resolve": 2,
+    "match": 2
+   },
+   "judge_score": 1.0,
+   "judge_reason": "Both key points are present and accurately described."
+  },
+  {
+   "id": "loc-02",
+   "category": "locator",
+   "retrieved": [
+    "agents-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md",
+    "agents-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md",
+    "agent-harness-deep-dive/README.md"
+   ],
+   "answer": "The deep dive where you write the agent loop from scratch is the **Agents** deep dive (agents-deep-dive/README.md:506).",
+   "cost_usd": 0.000473,
+   "latency_s": 2.92,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 0,
+    "match": 0
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly identifies the 'Agents' deep dive as the one where you write the agent loop from scratch."
+  },
+  {
+   "id": "loc-03",
+   "category": "locator",
+   "retrieved": [
+    "mcp-deep-dive/README.md",
+    "README.md",
+    "context-engineering-deep-dive/README.md",
+    "context-engineering-deep-dive/README.md",
+    "GLOSSARY.md"
+   ],
+   "answer": "The deep dive that covers the Model Context Protocol is the **MCP** (Model Context Protocol) deep dive (README.md:54).",
+   "cost_usd": 0.000499,
+   "latency_s": 2.51,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 0.5,
+   "judge_reason": "The answer mentions the MCP dive but does not include the key point about writing the server once for any client to use."
+  },
+  {
+   "id": "loc-04",
+   "category": "locator",
+   "retrieved": [
+    "CAREERS.md",
+    "prompt-injection-deep-dive/README.md",
+    "prompt-engineering-deep-dive/EXERCISES.md",
+    "prompt-injection-deep-dive/README.md",
+    "prompt-injection-deep-dive/examples/04_prompting_defenses.py"
+   ],
+   "answer": "The deep dive that teaches defending against prompt injection is titled \"Prompt Injection & Guardrails \u2014 A Guided Deep Dive\" (prompt-injection-deep-dive/README.md:1).",
+   "cost_usd": 0.000353,
+   "latency_s": 3.14,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 1
+   },
+   "judge_score": 1.0,
+   "judge_reason": "The answer correctly identifies the key point about the Prompt Injection & Guardrails dive."
+  },
+  {
+   "id": "loc-05",
+   "category": "locator",
+   "retrieved": [
+    "ai-in-production-deep-dive/README.md",
+    "README.md",
+    "fine-tuning-deep-dive/README.md",
+    "ai-in-production-deep-dive/examples/00_mock_provider.py",
+    "context-engineering-deep-dive/README.md"
+   ],
+   "answer": "The \"Fine-tuning \u2014 A Guided Deep Dive\" runs entirely on an offline mock provider, needing no API key at all (fine-tuning-deep-dive/README.md:9).",
+   "cost_usd": 0.000412,
+   "latency_s": 2.51,
+   "hit": true,
+   "citations": {
+    "total": 1,
+    "resolve": 1,
+    "match": 0
+   },
+   "judge_score": 0.0,
+   "judge_reason": "The candidate answer incorrectly identifies the deep dive as 'Fine-tuning \u2014 A Guided Deep Dive' instead of the correct 'Production dive (ai-in-production)'."
+  }
+ ]
+}
