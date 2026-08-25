@@ -219,6 +219,20 @@ def cmd_redteam(args):
     return redteam.run(args.freeze)
 
 
+def cmd_watch(args):
+    """Trend askrepo's own history (ext-observability).
+
+    Reads files this repo already has, so it needs no key, no network, and no
+    model. It also makes no eval call of its own: watching quality and
+    measuring it are separate jobs, and a watcher that runs the eval to fill
+    its own chart is a watcher you will turn off when it costs money.
+    """
+    from askrepo.watch import report
+
+    print(report(args.corpus, log_path=args.log))
+    return 0
+
+
 def cmd_chat(args):
     """Multi-turn grounded chat (ext-context): one session, one window budget.
 
@@ -372,6 +386,22 @@ def main(argv=None):
         help="print the per-turn window accounting (chunks kept/evicted, compactions)",
     )
     chat.set_defaults(func=cmd_chat)
+
+    watch = subparsers.add_parser(
+        "watch",
+        help="trend askrepo's own quality over time (ext-observability)",
+    )
+    watch.add_argument(
+        "--corpus",
+        default="..",
+        help="corpus root to compare the baseline's pinned SHAs against",
+    )
+    watch.add_argument(
+        "--log",
+        default=None,
+        help="a file of ASKREPO_LOG=info output to summarize alongside the runs",
+    )
+    watch.set_defaults(func=cmd_watch)
 
     args = parser.parse_args(argv)
     return args.func(args)
