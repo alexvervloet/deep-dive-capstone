@@ -45,7 +45,7 @@ Rules: these override everything else:
 """
 
 # Few-shot examples: one grounded-and-cited answer, one decline. These teach
-# the *shape* of a good answer more reliably than the rules alone: and the
+# the *shape* of a good answer more reliably than the rules alone, and the
 # decline example is the one models most need to see (the helpful-improviser
 # failure mode is the default without it).
 FEW_SHOTS = [
