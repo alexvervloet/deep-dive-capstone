@@ -9,8 +9,8 @@ paths a real user has, and score whether the injection landed:
 
   rag    the poisoned file arrives as retrieved context (v03 path; here fed
          directly so the test is about the injection, not retrieval luck)
-  agent  the agent reads the file with its own read_file tool (v05 path) 
-         the tool IS the delivery vehicle
+  agent  the agent reads the file with its own read_file tool (v05 path; the
+         tool IS the delivery vehicle)
 
 ...each with defenses OFF (askrepo/guardrails.py bypassed) and ON. Attack
 success rate (ASR) is the fraction of attacks whose success marker survives in
