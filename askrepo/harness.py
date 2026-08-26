@@ -56,7 +56,7 @@ class SandboxError(RuntimeError):
 class PermissionPolicy:
     """Per-tool verdicts plus a default for anything unlisted.
 
-    askrepo's default is DENY: a Q&A agent's tool list should be closed 
+    askrepo's default is DENY: a Q&A agent's tool list should be closed:
     a tool nobody granted is a tool that doesn't run. ASK exists for tools
     that need a human (none do today; see Harness.decide for how an ASK
     resolves when no approver is present).
@@ -85,7 +85,7 @@ class PermissionPolicy:
 
 
 class ReadOnlySandbox:
-    """A path jail plus read rules. Every check is on the *canonical* path 
+    """A path jail plus read rules. Every check is on the *canonical* path:
     realpath collapses `..` and follows symlinks, so the tricks a raw-string
     startswith would miss are the first thing caught."""
 
@@ -119,7 +119,7 @@ class ReadOnlySandbox:
                 f"{path!r} is not a readable type "
                 f"({', '.join(sorted(self.readable_suffixes))}). Refused."
             )
-        # A missing file is an ordinary tool error, NOT a policy refusal 
+        # A missing file is an ordinary tool error, NOT a policy refusal:
         # raise a plain OSError so the audit log doesn't count a typo as a
         # security denial. SandboxError is reserved for "the rules said no."
         if not os.path.isfile(real):
