@@ -121,7 +121,7 @@ MCP clients hand servers a restricted environment rather than inheriting yours.
 
 Two earlier steps carry over on purpose. **v06:** an MCP answer is delivered
 into another agent's context, exactly the injection channel the red-team
-measured: so `ask` hardens the prompt and sanitizes the output
+measured, so `ask` hardens the prompt and sanitizes the output
 unconditionally, and `search` labels its blocks as untrusted data (a tripwire,
 not a wall: the host's model is out of our hands). **v07:** a server is a
 long-lived session, which is what the budget was built for; and because the
