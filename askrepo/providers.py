@@ -64,7 +64,7 @@ PRICES = {
 
 # Embeddings have no output tokens: you pay input only ($ per 1M tokens).
 # Anthropic has no first-party embeddings model; the claude stack uses Voyage
-# (its own SDK and key). The local stack uses a small Ollama embedding model 
+# (its own SDK and key). The local stack uses a small Ollama embedding model,
 # free, and the whole point of ext-local: index without sending a byte out.
 EMBED_MODELS = {
     "openai": "text-embedding-3-small",
@@ -260,7 +260,7 @@ class ClaudeProvider:
                     for b in resp.content
                     if b.type == "tool_use"
                 ],
-                # echo the content blocks back verbatim on the next turn 
+                # echo the content blocks back verbatim on the next turn:
                 # the API requires the assistant turn to precede tool_results
                 "assistant": {"role": "assistant", "content": resp.content},
             }
