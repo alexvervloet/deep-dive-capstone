@@ -355,7 +355,7 @@ def detect(runs, metric, direction, robust=True):
 def compare_configs(runs, reference, metric):
     """Re-check every cross-config gap against the noise floor.
 
-    This is the part that earns its keep on a repo with six runs. askrepo makes
+    This is the check that matters once a repo has six runs. askrepo makes
     claims in prose: `evals/comparison.md` says RAG beats the agent,
     `comparison-local.md` compares a local model against the cloud one. Each is
     a difference between two configs, and a difference is only real if it is
