@@ -22,7 +22,7 @@ repo, plus this tool's own SHA). Separate histories mean a capstone tag can't
 pin the corpus state, so the run records what it was measured against; that
 is what makes baseline.run.json reproducible instead of nostalgic.
 
-Judge caveat (from the evals dive): the judge is a model grading a model 
+Judge caveat (from the evals dive): the judge is a model grading a model;
 spot-check its verdicts by hand before trusting trends. Each question's
 judge reason is saved in the run file for exactly that.
 """
@@ -167,7 +167,7 @@ def run(args):
     )
     blend = float(config["BLEND"])
 
-    # A per-session spend ceiling (v07). The eval loop is a real session 
+    # A per-session spend ceiling (v07). The eval loop is a real session:
     # 40 calls in one process, so a runaway or a too-low ceiling stops the
     # run instead of running the bill up to the end.
     budget = Budget(args.budget)
