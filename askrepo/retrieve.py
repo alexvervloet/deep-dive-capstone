@@ -1,6 +1,6 @@
 """Hybrid retrieval over the saved index: vector search + BM25, blended.
 
-Vector search matches on *meaning*; BM25 matches on the actual *words* 
+Vector search matches on *meaning*; BM25 matches on the actual *words*,
 which is what you want for the things embeddings are worst at: module names,
 flags, error strings, `secrun`. (Both implementations are adapted from
 rag-deep-dive/rag/, where store.py and keyword.py teach them from scratch.)
