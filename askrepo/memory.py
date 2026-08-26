@@ -64,7 +64,7 @@ class ChatMemory:
         return tokens.estimate(self.summary) + tokens.estimate_messages(self.turns)
 
     def _maybe_compact(self):
-        # keep peeling the oldest turns into the summary until the turns fit 
+        # keep peeling the oldest turns into the summary until the turns fit:
         # one summarize call can still leave us over budget, so loop
         while self._turn_tokens() > self.budget and len(self.turns) > self.keep_recent:
             old = self.turns[: -self.keep_recent]
