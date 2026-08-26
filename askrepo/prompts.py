@@ -4,7 +4,7 @@ Three rules, enforced by the system prompt and demonstrated by few-shots:
 
   1. Answer ONLY from the provided context, never from prior knowledge.
   2. Cite (path:line) for every claim, using the line numbers in the context.
-  3. If the context doesn't contain the answer, say so with DECLINE_PHRASE 
+  3. If the context doesn't contain the answer, say so with DECLINE_PHRASE
      verbatim, so later steps can score declines mechanically (v04).
 
 There is no retrieval yet; context arrives via `ask --context <file>`. That's
