@@ -21,8 +21,8 @@ single tool result from flooding the context window.
 Boundaries live in the harness (feat/harness, from harness.py): a permission
 policy decides *which* tools run, a read-only sandbox decides *what* they may
 touch, and an audit log records every proposed call and its verdict. v05's
-inline path jail became the sandbox's first rule; the rules it lacked 
-read_file could open any file inside the jail, a planted .env included 
+inline path jail became the sandbox's first rule; the rules it lacked,
+read_file could open any file inside the jail, a planted .env included,
 are now enforced in code the model can't argue with. Refusals go back to the
 model in-band ("error: ...") so the loop continues; the harness never crashes
 an answer, it just narrows what one can do.
@@ -204,7 +204,7 @@ def run_tool(harness, name, args, touched):
             return tool_list_dir(harness.sandbox, args.get("path", "."))
         return f"error: unknown tool {name!r}"
     except SandboxError as e:
-        # the policy allowed the tool, but the sandbox refused these arguments 
+        # the policy allowed the tool, but the sandbox refused these arguments:
         # amend the audit trail so the flight recorder shows the block
         harness.audit.record(name, args, DENY, note=f"sandbox: {e}")
         return f"error: {e}"
