@@ -11,7 +11,7 @@ This module budgets all three explicitly and runs one turn. Two memories with
 two lifetimes do the work: a ChatMemory carries the conversation thread (clean
 question/answer text, compacted when it outgrows its slice), and a ChunkPool
 carries the evidence (retrieved chunks, aged so fresh relevance wins the budget
-fight). The chunk context is attached to the *current* outgoing message only
+fight). The chunk context is attached to the *current* outgoing message only,
 never persisted into the thread, so compaction never folds raw file text into
 a summary, and the conversation stays legible.
 
