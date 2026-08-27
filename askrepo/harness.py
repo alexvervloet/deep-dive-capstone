@@ -15,17 +15,17 @@ Three pieces, each tiny on purpose:
                      Claude Code's permission modes).
   ReadOnlySandbox    where file tools may look. v05 already jailed paths to
                      the corpus root; the harness lifts that inline check out
-                     and closes what it missed: `read_file` would open ANY
-                     file inside the jail: a planted `.env`, a key file
+                     and closes what it missed. `read_file` would open ANY
+                     file inside the jail, a planted `.env` or a key file,
                      while grep only ever walked .md/.py. Now reads are
                      allowlisted by suffix and dotfiles are refused, jail or
                      no jail. (There is deliberately no write method: this
                      sandbox can't be talked into becoming a weapon.)
   AuditLog           what actually happened: every proposed call, its
-                     verdict, and how it ended: the flight recorder the
-                     red-team table reads from.
+                     verdict, and how it ended. This is the flight recorder
+                     the red-team table reads from.
 
-Honest scope: the harness stops tool *abuse*: reading what should never be
+Honest scope. The harness stops tool *abuse*: reading what should never be
 read, running what was never allowed. It cannot stop a plausible lie planted
 in a file the agent is *supposed* to read (v06's fact-poison); no boundary
 on tools fixes that, because reading the file was the legitimate job.
@@ -56,7 +56,7 @@ class SandboxError(RuntimeError):
 class PermissionPolicy:
     """Per-tool verdicts plus a default for anything unlisted.
 
-    askrepo's default is DENY: a Q&A agent's tool list should be closed:
+    askrepo's default is DENY: a Q&A agent's tool list should be closed, and
     a tool nobody granted is a tool that doesn't run. ASK exists for tools
     that need a human (none do today; see Harness.decide for how an ASK
     resolves when no approver is present).
