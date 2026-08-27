@@ -54,7 +54,7 @@ from askrepo.providers import cost_usd, get_provider
 mcp = MCPServer("askrepo")
 
 # One server process = one session: the budget meter and answer cache live for
-# its lifetime (the cache is disk-backed anyway: v07, so hits survive
+# its lifetime (the cache is disk-backed anyway since v07, so hits survive
 # restarts too).
 _config = None
 _budget = None
