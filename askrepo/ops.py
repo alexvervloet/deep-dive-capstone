@@ -11,7 +11,7 @@ offline equivalent of the dive's "back it with Redis so it survives a
 restart": same get/set interface, persistent store.
 
 Everything here is pure standard library, so the whole ops layer, and its
-tests: run on the mock with no key. That's the v00 promise, kept to the end.
+tests, run on the mock with no key. That's the v00 promise, kept to the end.
 """
 
 import hashlib
