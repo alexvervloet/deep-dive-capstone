@@ -1,7 +1,7 @@
 """Agentic retrieval: answer by *searching* the corpus, not embedding it.
 
 An agent is a loop: the model picks a tool, you run it, you feed the result
-back: until it answers (the agents dive's one big idea, adapted from
+back, until it answers (the agents dive's one big idea, adapted from
 agents-deep-dive/agent/loop.py + tools.py). Here the tools are read-only
 corpus search:
 
