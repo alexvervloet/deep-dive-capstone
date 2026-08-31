@@ -1,5 +1,5 @@
 #!/bin/sh
-# The zsh `secrun` function from ../SECRETS.md, as a script.
+# The zsh `secrun` function from ../docs/SECRETS.md, as a script.
 #
 # Why both exist: MCP hosts (Claude Code, Claude Desktop) spawn servers as
 # bare subprocesses: no interactive shell, so shell functions don't exist
@@ -16,7 +16,7 @@ set -eu
 
 for key in ANTHROPIC_API_KEY OPENAI_API_KEY VOYAGE_API_KEY; do
     if ! value=$(security find-generic-password -a "$USER" -s "deepdives:$key" -w 2>/dev/null); then
-        echo "secrun.sh: missing Keychain item 'deepdives:$key'; see ../SECRETS.md" >&2
+        echo "secrun.sh: missing Keychain item 'deepdives:$key'; see ../docs/SECRETS.md" >&2
         exit 1
     fi
     export "$key=$value"
