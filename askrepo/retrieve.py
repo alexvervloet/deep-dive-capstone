@@ -53,7 +53,7 @@ def tokenize(text):
 
 
 class BM25:
-    """BM25 keyword scoring over the chunk texts (see rag/keyword.py for the
+    """BM25 keyword scoring over the chunk texts (see ../rag-deep-dive/rag/keyword.py for the
     from-scratch walkthrough of k1, b, and IDF)."""
 
     def __init__(self, texts, k1=1.5, b=0.75):
