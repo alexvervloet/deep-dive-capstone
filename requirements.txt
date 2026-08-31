@@ -12,7 +12,7 @@ anthropic>=0.111.0,<1
 
 # Voyage AI: embeddings for the claude stack (v03's index). Anthropic has no
 # first-party embeddings model; see ../docs/MODELS.md.
-voyageai>=0.3.0
+voyageai>=0.3.0,<1
 
 # Official MCP SDK: only for the MCP server (feat/mcp). Everything else,
 # including the whole test suite's logic, runs without it.
