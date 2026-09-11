@@ -68,7 +68,7 @@ The expected story was "local is cheaper but worse." Only half held.
 Line 3 of §"§4 note" said it: *"a stronger or larger local model would likely
 tighten the citation gap; measure it before believing it."* So we did: a 35B
 model on a LAN box via LM Studio. The naive expectation "bigger local model →
-clearly better" **did not hold**, and the reasons are the honest lesson:
+clearly better" **didn't hold**, and the reasons are the honest lesson:
 
 1. **The 35B tied cloud; it didn't beat it.** 0.786 correctness is within judge
    noise (~±0.02) of the cloud baseline's 0.771: a tie, not the +0.072 the
