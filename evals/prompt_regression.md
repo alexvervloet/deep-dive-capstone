@@ -43,7 +43,7 @@ refuses to blur that line.
 
 **After** (gpt-4o-mini):
 
-> The series defaults to the model `gpt-4o-mini` because it is cheap, fast,
+> The series defaults to the model `gpt-4o-mini` because it's cheap, fast,
 > multimodal, and great for learning and most tasks (MODELS.md:40).
 
 Verified: MODELS.md line 40 is exactly the `gpt-4o-mini` row. The citation
