@@ -97,8 +97,8 @@ clearly better" **didn't hold**, and the reasons are the honest lesson:
 
 5. **Latency is the tax, and it scales.** 2.7s cloud → 12.2s local-8b → **36.7s
    local-35b**. The big model on a remote box is ~13.5× slower than cloud. For a
-   35B thinking model reasoning before every answer, on one consumer GPU, that
-   is the real, felt cost of the $0 privacy win: not dollars, wall-clock.
+   35B thinking model reasoning before every answer, on one consumer GPU, that's
+   the real, felt cost of the $0 privacy win: not dollars, wall-clock.
 
 ## The honest headline
 
