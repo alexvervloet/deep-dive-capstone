@@ -29,7 +29,7 @@ Runs: `2026-07-03T21:33:59` (rag) · `2026-07-03T21:48:16` (agent).
 `askrepo watch` measures this repo's run-to-run wobble from the two rag runs
 recorded 76 seconds apart with an identical config. On `citation match` that
 wobble is **0.063**. The gap in the table above is 0.721 − 0.705 = **0.016**, so
-that row is not a difference. It should be read as "the same", and the earlier
+that row isn't a difference. It should be read as "the same", and the earlier
 version of this file that presented it as a column comparison was overclaiming.
 
 It gets sharper. The other rag run of the same config scored 0.784 on that
@@ -39,6 +39,6 @@ conclusions, and nothing but which file got opened decided it.
 
 The verdict itself survives, and by a wide margin: judged correctness is 0.114
 apart against a floor of 0.015, and hit@k 0.115 against a floor of 0.000. RAG
-beats the agent here. It just does not beat it at citation matching.
+beats the agent here. It just doesn't beat it at citation matching.
 
 Run `python -m askrepo watch` to recompute all of this.
