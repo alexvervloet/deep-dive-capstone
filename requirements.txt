@@ -5,10 +5,10 @@
 # light, and installing both lets you switch stacks with one env-var change.
 
 # OpenAI: used when PROVIDER=openai (chat, streamed).
-openai>=2.0,<3
+openai>=3.0,<4
 
 # Anthropic: used when PROVIDER=claude (messages, streamed).
-anthropic>=0.111.0,<1
+anthropic>=1.0,<2
 
 # Voyage AI: embeddings for the claude stack (v03's index). Anthropic has no
 # first-party embeddings model; see ../docs/MODELS.md.
