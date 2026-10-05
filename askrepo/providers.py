@@ -58,6 +58,7 @@ def local_client_kwargs(embed=False) -> dict[str, Any]:
 # $ per 1M tokens (input, output): same numbers as ../docs/MODELS.md, so the cost
 # line here matches what the series teaches. Update both places together.
 PRICES = {
+    "gpt-6-luna": (0.10, 0.50),
     "gpt-5.4-nano": (0.20, 1.25),
     "claude-haiku-4-5": (1.00, 5.00),
 }
@@ -134,13 +135,23 @@ class OpenAIProvider:
     name = "openai"
 
     def __init__(self, model=None):
-        self.model = model or "gpt-5.4-nano"
+        self.model = model or "gpt-6-luna"
         self.usage: tuple[int, int] = (0, 0)
         self.max_tokens = MAX_TOKENS
 
     def _client_kwargs(self):
         # OpenAI proper: no base_url, real key from OPENAI_API_KEY. LocalProvider
         # overrides this to point the very same SDK at a local server.
+        return {}
+
+    def _reasoning_kwargs(self):
+        # gpt-6-luna reasons by default: hidden tokens count against
+        # max_completion_tokens, and on chat completions it rejects tools
+        # (agent mode) until reasoning is off. "none" turns it off. Older
+        # models (gpt-4o-mini) and gpt-6-astra reject "none", so a MODEL
+        # override only gets it where it's accepted.
+        if self.model.startswith("gpt-5.") or self.model in ("gpt-6-luna", "gpt-6-sol"):
+            return {"reasoning_effort": "none"}
         return {}
 
     def _client(self):
@@ -154,6 +165,7 @@ class OpenAIProvider:
             messages=messages,
             max_completion_tokens=self.max_tokens,
             stream=True,
+            **self._reasoning_kwargs(),
             # ask for a final usage chunk so the cost line is real, not guessed
             stream_options={"include_usage": True},
         )
@@ -168,7 +180,8 @@ class OpenAIProvider:
         if tools:
             kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
         resp = self._client().chat.completions.create(
-            model=self.model, messages=messages, max_completion_tokens=self.max_tokens, **kwargs
+            model=self.model, messages=messages, max_completion_tokens=self.max_tokens,
+            **self._reasoning_kwargs(), **kwargs,
         )
         self.usage = (resp.usage.prompt_tokens, resp.usage.completion_tokens)
         msg = resp.choices[0].message
@@ -311,6 +324,11 @@ class LocalProvider(OpenAIProvider):
 
     def _client_kwargs(self):
         return local_client_kwargs()
+
+    def _reasoning_kwargs(self):
+        # Local runners have their own thinking switches (qwen3's /no_think);
+        # an OpenAI reasoning_effort means nothing to them.
+        return {}
 
 
 PROVIDERS = {
