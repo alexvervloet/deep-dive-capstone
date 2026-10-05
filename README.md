@@ -90,9 +90,11 @@ Each step is a tag; `git checkout <tag>` shows the project as it stood then.
 > below was measured on `gpt-4o-mini`, the series default when those runs were
 > made (2026-07-03 to 2026-07-06); each run file under [`evals/`](evals/)
 > records the exact model it used, and the cost columns are that model's prices.
-> The current default is `gpt-5.4-nano` ([../docs/MODELS.md](../docs/MODELS.md)), which is
+> The current default is `gpt-6-luna` ([../docs/MODELS.md](../docs/MODELS.md)), which is
 > a different model at a different price, so a rerun won't reproduce these
-> numbers. Re-freeze the baseline before comparing a new run against it.
+> numbers. Re-freeze the baseline before comparing a new run against it. Expect the
+> red-team figures to move most: the prompt-injection dive's indirect attacks landed
+> 30 of 40 times on `gpt-4o-mini` and 0 of 40 on luna.
 
 ## Extensions
 
