@@ -69,12 +69,13 @@ PRICES = {
 # free, and the whole point of ext-local: index without sending a byte out.
 EMBED_MODELS = {
     "openai": "text-embedding-3-small",
-    "claude": "voyage-3.5",
+    "claude": "voyage-4",
     "local": os.getenv("LOCAL_EMBED_MODEL", "nomic-embed-text"),
 }
 EMBED_PRICES = {
     "text-embedding-3-small": 0.02,
-    "voyage-3.5": 0.06,
+    "voyage-4": 0.06,
+    "voyage-3.5": 0.06,  # the claude stack's model until 2026-10-06
     # local embeddings cost $0: it's your GPU, not a meter. Kept in the table
     # so the eval's cost column reads a true zero, not "unknown price".
     "nomic-embed-text": 0.0,
@@ -363,8 +364,9 @@ def embed(texts, stack, input_type="document", model=None):
     saved index and passes it here. (A local-built index therefore stays
     local at query time too; no OpenAI/Voyage key involved.)
 
-    The stack alone isn't enough, though: a stack's model can change, and an
-    index built before that still holds the old model's vectors. So retrieve.py also passes the
+    The stack alone isn't enough, though: a stack's model can change (claude
+    moved from voyage-3.5 to voyage-4 on 2026-10-06), and an index built before
+    that still holds the old model's vectors. So retrieve.py also passes the
     index's recorded `model`; None means "this stack's current default".
     """
     if not texts:
