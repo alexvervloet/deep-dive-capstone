@@ -11,9 +11,11 @@ on some queries, so BLEND is configurable here and *measured* at v04, not
 asserted. Default 0.7 (vector-leaning) until the numbers say otherwise.
 
 One hard rule: the query is embedded with the model the index was built
-with: vectors from different models live in different spaces. The stack is
-read out of the index, not out of PROVIDER, so you can chat with Claude over
-an OpenAI-embedded index without lying to the math.
+with: vectors from different models live in different spaces. The stack AND
+the model are read out of the index, not out of PROVIDER, so you can chat with
+Claude over an OpenAI-embedded index without lying to the math, and an index
+built before a stack changed its embedding model keeps using the model it was
+built with.
 """
 
 import json
@@ -105,7 +107,9 @@ def retrieve(question, index, k=5, blend=0.7):
     chunks = index["chunks"]
     # embedding is one clean request: the ideal thing to retry on a blip
     query_vector, _ = with_retry(
-        lambda: embed([question], index["stack"], input_type="query")
+        lambda: embed(
+            [question], index["stack"], input_type="query", model=index.get("embed_model")
+        )
     )
     vector_scores = [cosine_similarity(query_vector[0], c["vector"]) for c in chunks]
     keyword_scores = BM25([c["text"] for c in chunks]).scores(question)

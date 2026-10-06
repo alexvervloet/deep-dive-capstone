@@ -349,7 +349,7 @@ def get_provider(name, model=None):
     )
 
 
-def embed(texts, stack, input_type="document"):
+def embed(texts, stack, input_type="document", model=None):
     """Embed a batch of texts on the given stack ('openai', 'claude', 'local').
 
     Returns (vectors, total_tokens). `input_type` is "document" for things
@@ -362,14 +362,19 @@ def embed(texts, stack, input_type="document"):
     comparing them is meaningless. retrieve.py reads the stack out of the
     saved index and passes it here. (A local-built index therefore stays
     local at query time too; no OpenAI/Voyage key involved.)
+
+    The stack alone isn't enough, though: a stack's model can change, and an
+    index built before that still holds the old model's vectors. So retrieve.py also passes the
+    index's recorded `model`; None means "this stack's current default".
     """
     if not texts:
         return [], 0
+    model = model or EMBED_MODELS[stack]
     if stack in ("openai", "local"):
         from openai import OpenAI
 
         client = OpenAI(**(local_client_kwargs(embed=True) if stack == "local" else {}))
-        resp = client.embeddings.create(model=EMBED_MODELS[stack], input=list(texts))
+        resp = client.embeddings.create(model=model, input=list(texts))
         # Ollama may omit usage; fall back to a token estimate so callers that
         # price/log it don't crash (local is free anyway).
         used = getattr(resp, "usage", None)
@@ -387,7 +392,7 @@ def embed(texts, stack, input_type="document"):
             )
 
         result = voyageai.Client().embed(  # type: ignore[reportPrivateImportUsage]
-            list(texts), model=EMBED_MODELS["claude"], input_type=input_type
+            list(texts), model=model, input_type=input_type
         )
         return result.embeddings, result.total_tokens
     raise SystemExit(
